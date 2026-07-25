@@ -1,0 +1,14 @@
+{
+  "name": "faustluna-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FaustLuna Store - aplikasi pencatatan penjualan (dibungkus Capacitor jadi APK native)",
+  "dependencies": {
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/android": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/assets": "^3.0.5"
+  }
+}
