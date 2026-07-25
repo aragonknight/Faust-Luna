@@ -272,7 +272,9 @@ function renderAll() {
     renderLogs();
     renderDashboard();
     checkGlobalOverdueAlert();
+    checkHomeLowStockAlert();
     renderNotifBadge();
+    scheduleNativeReminders();
     const dateInput = document.getElementById('pengeluaran-date');
     if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 }

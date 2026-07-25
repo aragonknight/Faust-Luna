@@ -24,20 +24,38 @@ function handleSaveTelegramSettings(e) {
 
 function handleToggleH1Notif(e) {
     const enabled = e.target.checked;
-    if (enabled && (!('Notification' in window) || Notification.permission !== 'granted')) {
-        if ('Notification' in window) {
-            Notification.requestPermission().then(perm => {
-                if (perm !== 'granted') {
+    if (enabled) {
+        if (isNativeApp()) {
+            requestNativeNotifPermission().then(granted => {
+                if (!granted) {
                     e.target.checked = false;
-                    showToast('❌ Izin notifikasi browser ditolak.', 'error');
+                    showToast('❌ Izin notifikasi ditolak. Aktifkan manual di Pengaturan HP > Aplikasi > FaustLuna > Izin > Notifikasi.', 'error');
                     return;
                 }
                 state.settings.h1NotifEnabled = true;
                 saveState();
                 showToast('🔔 Pengingat H-1 di HP diaktifkan!', 'success');
+                scheduleNativeReminders();
             });
             return;
         }
+        if (!('Notification' in window) || Notification.permission !== 'granted') {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(perm => {
+                    if (perm !== 'granted') {
+                        e.target.checked = false;
+                        showToast('❌ Izin notifikasi browser ditolak.', 'error');
+                        return;
+                    }
+                    state.settings.h1NotifEnabled = true;
+                    saveState();
+                    showToast('🔔 Pengingat H-1 di HP diaktifkan!', 'success');
+                });
+                return;
+            }
+        }
+    } else if (isNativeApp()) {
+        cancelAllNativeReminders();
     }
     state.settings.h1NotifEnabled = enabled;
     saveState();

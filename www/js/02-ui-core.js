@@ -118,6 +118,7 @@ function goHome() {
     document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
     document.querySelectorAll('.sidebar-overlay').forEach(o => o.classList.remove('show'));
     renderHomeKeuangan();
+    checkHomeLowStockAlert();
 }
 
 // --- SISTEM MASKOT LUNA ---

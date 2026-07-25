@@ -1,4 +1,4 @@
-const CACHE_NAME = 'faustluna-store-v8.0';
+const CACHE_NAME = 'faustluna-store-v9.0';
 const ASSETS = [
     './',
     './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
     './js/05-wdp-pembeli.js',
     './js/06-notif-search-reminder.js',
     './js/07-keuangan-laporan.js',
+    './js/08-native-notif.js',
     './manifest.json',
     './logo.png',
     './icons/icon-192.png',

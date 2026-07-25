@@ -125,8 +125,11 @@ function checkTelegramDueReminder() {
 
     getAllActiveDeliverableTx().forEach(t => {
         const daysLeft = getDaysRemaining(t.estDeliveryDate);
-        if (daysLeft === hmin) {
-            const flag = `${t.id}_${todayStr}`;
+        // Pakai <= (bukan ===) biar tetap kekejar meski app gak sempat dibuka pas
+        // hari H-nya persis — flag dikunci per transaksi (bukan per tanggal) supaya
+        // notifnya cuma dikirim SEKALI per transaksi, gak diulang tiap hari.
+        if (daysLeft <= hmin) {
+            const flag = `${t.id}`;
             if (!notified[flag]) {
                 const textNotif = `<b>⏰ PENGINGAT H-${hmin} PENGIRIMAN!</b>\n\n` +
                     `<b>Pembeli:</b> ${t.buyerName || '-'}\n` +

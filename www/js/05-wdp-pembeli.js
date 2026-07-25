@@ -383,7 +383,9 @@ function notifyInstantDeliverySuccess(tx, prodKey) {
 function checkGlobalOverdueAlert() {
     const todayStr = new Date().toISOString().split('T')[0];
     const hasUrgent = productTx().some(t => (t.status === 'Belum Dikirim' || t.status === 'Booking') && (t.estDeliveryDate || '') <= todayStr);
-    const hasLowStock = state.accounts.some(a => (a.basic || 0) < 2 || (a.premium || 0) < 2);
+    // Stok Basic/Premium/gift slot cuma konsep akun kasir Mobile Legends, jadi warning
+    // stok menipis ini hanya relevan (dan hanya dicek) di produk mobileleg.
+    const hasLowStock = currentProduct === 'mobileleg' && state.accounts.some(a => (a.basic || 0) < 2 || (a.premium || 0) < 2);
     const alertBox = document.getElementById('urgent-alert-container'); 
     const alertText = document.getElementById('alert-zone-text');
     
@@ -398,6 +400,15 @@ function checkGlobalOverdueAlert() {
         alertText.innerHTML = `<strong>Pengingat Stok Menipis!</strong> Beberapa akun kasir kamu kehabisan stok / limit gift.`;
         setMascotMood('pengingat', '📦 Stok akun kasir mulai menipis nih!', 6000);
     } else { alertBox.classList.add('hidden'); }
+}
+
+// Versi khusus Home: stok Basic/Premium akun kasir ML tetap relevan dipantau dari Home
+// (sebelum masuk ke workspace produk manapun), jadi ditampilkan terpisah di sini.
+function checkHomeLowStockAlert() {
+    const hasLowStock = state.accounts.some(a => (a.basic || 0) < 2 || (a.premium || 0) < 2);
+    const alertBox = document.getElementById('home-low-stock-alert');
+    if (!alertBox) return;
+    alertBox.classList.toggle('hidden', !hasLowStock);
 }
 
 function renderDailyAgenda() {
