@@ -1,25 +1,27 @@
 // ============================================================
-// HALAMAN PENGATURAN: Telegram & Supabase
+// HALAMAN PENGATURAN: WhatsApp & Supabase
 // (bagian dari script.js asli - FaustLuna Store)
 // ============================================================
 // --- HALAMAN PENGATURAN --- //
 function renderSettingsForm() {
-    if(document.getElementById('set-telegram-token')) document.getElementById('set-telegram-token').value = state.settings.telegramToken || '';
-    if(document.getElementById('set-telegram-chatid')) document.getElementById('set-telegram-chatid').value = state.settings.telegramChatId || '';
-    if(document.getElementById('set-telegram-hmin')) document.getElementById('set-telegram-hmin').value = state.settings.telegramHmin || 2;
+    if(document.getElementById('set-wa-token')) document.getElementById('set-wa-token').value = state.settings.waAccessToken || '';
+    if(document.getElementById('set-wa-phone-id')) document.getElementById('set-wa-phone-id').value = state.settings.waPhoneNumberId || '';
+    if(document.getElementById('set-wa-recipient')) document.getElementById('set-wa-recipient').value = state.settings.waRecipientNumber || '';
+    if(document.getElementById('set-wa-hmin')) document.getElementById('set-wa-hmin').value = state.settings.waHmin || 2;
     if(document.getElementById('set-h1-notif-enabled')) document.getElementById('set-h1-notif-enabled').checked = !!state.settings.h1NotifEnabled;
     if(document.getElementById('set-supabase-url')) document.getElementById('set-supabase-url').value = state.settings.supabaseUrl || '';
     if(document.getElementById('set-supabase-key')) document.getElementById('set-supabase-key').value = state.settings.supabaseKey || '';
 }
 
-function handleSaveTelegramSettings(e) {
+function handleSaveWhatsappSettings(e) {
     e.preventDefault();
-    state.settings.telegramToken = document.getElementById('set-telegram-token')?.value.trim() || '';
-    state.settings.telegramChatId = document.getElementById('set-telegram-chatid')?.value.trim() || '';
-    state.settings.telegramHmin = parseInt(document.getElementById('set-telegram-hmin')?.value) || 2;
+    state.settings.waAccessToken = document.getElementById('set-wa-token')?.value.trim() || '';
+    state.settings.waPhoneNumberId = document.getElementById('set-wa-phone-id')?.value.trim() || '';
+    state.settings.waRecipientNumber = document.getElementById('set-wa-recipient')?.value.trim() || '';
+    state.settings.waHmin = parseInt(document.getElementById('set-wa-hmin')?.value) || 2;
     saveState();
-    showToast('⚙️ Pengaturan Telegram disimpan!', 'success');
-    checkTelegramDueReminder();
+    showToast('⚙️ Pengaturan WhatsApp disimpan!', 'success');
+    checkWhatsappDueReminder();
 }
 
 function handleToggleH1Notif(e) {
@@ -92,7 +94,8 @@ async function pushStateToSupabase() {
         transactions: state.transactions, accounts: state.accounts, trash: state.trash,
         theme: state.theme, ledger: state.ledger, pengeluaran: state.pengeluaran,
         homeExpenses: state.homeExpenses, capitalPrices: state.capitalPrices,
-        wdpPurchases: state.wdpPurchases
+        wdpPurchases: state.wdpPurchases, gachaLogs: state.gachaLogs, logs: state.logs,
+        privacyMode: state.privacyMode, financeAdjustment: state.financeAdjustment
     };
 
     try {
@@ -127,6 +130,10 @@ async function pullStateFromSupabase() {
             state.homeExpenses = cloud.homeExpenses || [];
             state.capitalPrices = cloud.capitalPrices || state.capitalPrices;
             state.wdpPurchases = cloud.wdpPurchases || [];
+            state.gachaLogs = cloud.gachaLogs || [];
+            state.logs = cloud.logs || [];
+            state.privacyMode = cloud.privacyMode || false;
+            state.financeAdjustment = cloud.financeAdjustment || { pemasukan: 0, saldo: 0 };
             if (cloud.theme) state.theme = cloud.theme;
             saveState(); initTheme(); renderAll(); renderHomeKeuangan(); buildCRMList();
             showToast('✅ Data berhasil ditarik dari Supabase!', 'success', 'yeay');

@@ -174,9 +174,6 @@ function setupEventListeners() {
         });
     });
     
-    document.getElementById('export-btn')?.addEventListener('click', exportDataToJSON);
-    document.getElementById('import-trigger-btn')?.addEventListener('click', () => { document.getElementById('import-file-input')?.click(); });
-    document.getElementById('import-file-input')?.addEventListener('change', importDataFromJSON);
     document.getElementById('export-csv-btn')?.addEventListener('click', exportDataToCSV);
 
     // Sorting
@@ -187,8 +184,8 @@ function setupEventListeners() {
     document.getElementById('form-edit-tx')?.addEventListener('submit', handleEditTxSubmit);
     document.getElementById('close-edit-tx-modal')?.addEventListener('click', () => document.getElementById('edit-tx-modal')?.classList.remove('open'));
 
-    // Pengaturan: Telegram, Notifikasi H-1, Supabase
-    document.getElementById('form-settings-telegram')?.addEventListener('submit', handleSaveTelegramSettings);
+    // Pengaturan: WhatsApp, Notifikasi H-1, Supabase
+    document.getElementById('form-settings-whatsapp')?.addEventListener('submit', handleSaveWhatsappSettings);
     document.getElementById('set-h1-notif-enabled')?.addEventListener('change', handleToggleH1Notif);
     document.getElementById('form-settings-supabase')?.addEventListener('submit', handleSaveSupabaseSettings);
     document.getElementById('btn-supabase-push')?.addEventListener('click', pushStateToSupabase);
@@ -404,15 +401,15 @@ function handleAddSale(e) {
     updateSalesFormForType();
     showToast(`🚀 ${targetIDs.length * loopCount} Item Sukses Dimasukkan Antrean!`, "success", "terimaKasih");
 
-    // PELINDUNG DATA KOSONG UNTUK NOTIF TELEGRAM
-    const textNotif = `<b>🛒 PESANAN BARU MASUK!</b>\n\n` +
-                      `<b>Pembeli:</b> ${buyerName}\n` +
-                      `<b>Item:</b> ${starlightType}\n` +
-                      `<b>Harga Jual:</b> Rp ${(priceSelling || 0).toLocaleString('id-ID')}\n` +
-                      `<b>Status:</b> ${status}\n` +
-                      `<b>Akun Pengirim:</b> ${acc.ign || acc.username}`;
+    // PELINDUNG DATA KOSONG UNTUK NOTIF WHATSAPP
+    const textNotif = `*🛒 PESANAN BARU MASUK!*\n\n` +
+                      `*Pembeli:* ${buyerName}\n` +
+                      `*Item:* ${starlightType}\n` +
+                      `*Harga Jual:* Rp ${(priceSelling || 0).toLocaleString('id-ID')}\n` +
+                      `*Status:* ${status}\n` +
+                      `*Akun Pengirim:* ${acc.ign || acc.username}`;
                                
-    sendTelegramNotification(textNotif);
+    sendWhatsappNotification(textNotif);
 }
 
 function renderLedger() {
@@ -434,43 +431,10 @@ function autoCleanOldTrash() {
     saveState();
 }
 
-function exportDataToJSON() {
-    try {
-        const dataBackup = { transactions: state.transactions, accounts: state.accounts, trash: state.trash, theme: state.theme, ledger: state.ledger, logs: state.logs, capitalPrices: state.capitalPrices, wdpPurchases: state.wdpPurchases, gachaLogs: state.gachaLogs, pengeluaran: state.pengeluaran, homeExpenses: state.homeExpenses, financeAdjustment: state.financeAdjustment };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataBackup, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `Backup_FaustLuna_Full_${new Date().toISOString().split('T')[0]}.json`);
-        document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
-        showToast("📦 Seluruh database aman dicadangkan!", "success");
-    } catch (err) { showToast("❌ Gagal mengekspor data.", "error"); }
-}
-
-function importDataFromJSON(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    showConfirm("PERINGATAN! Data impor ini akan menimpa seluruh sistem. Tetap lanjutkan?", () => {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            try {
-                const parsed = JSON.parse(event.target.result);
-                if (parsed.transactions && parsed.accounts) {
-                    state.transactions = parsed.transactions; state.accounts = parsed.accounts;
-                    state.trash = parsed.trash || []; state.ledger = parsed.ledger || []; state.logs = parsed.logs || [];
-                    state.capitalPrices = parsed.capitalPrices || { "Basic": 25000, "Premium": 25000, "WDP": 25000, "Twilight": 25000, "Custom DM": 25000, "Genshin Impact": 25000, "Wuthering Waves": 25000 };
-                    state.wdpPurchases = parsed.wdpPurchases || [];
-                    state.gachaLogs = parsed.gachaLogs || [];
-                    state.pengeluaran = parsed.pengeluaran || [];
-                    state.homeExpenses = parsed.homeExpenses || [];
-                    state.financeAdjustment = parsed.financeAdjustment || { pemasukan: 0, saldo: 0 };
-                    saveState(); initTheme(); initPrivacy(); renderAll(); buildCRMList();
-                    showToast("✅ Pemulihan data sistem berhasil!", "success", "yeay");
-                }
-            } catch (err) { showToast("❌ File JSON tidak valid.", "error"); }
-        };
-        reader.readAsText(file);
-    });
-}
+// Catatan: fitur Ekspor/Impor JSON manual sudah dihapus.
+// Backup & restore data sekarang HANYA lewat Supabase (lihat pushStateToSupabase
+// & pullStateFromSupabase di 03-settings.js), biar gak ada 2 sumber backup
+// yang bisa bikin data konflik/bentrok.
 
 function exportDataToCSV() {
     try {
