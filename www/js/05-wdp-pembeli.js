@@ -83,6 +83,58 @@ function renderWdpHistory(accountId) {
     modal.classList.add('open');
 }
 
+// --- CATAT HASIL GACHA (STOK BASIC/PREMIUM JALUR GACHA, PER AKUN) --- //
+function openGachaModal(accountId) {
+    const acc = state.accounts.find(a => a.id === accountId);
+    if (!acc) return;
+    document.getElementById('form-gacha-catat')?.reset();
+    document.getElementById('gacha-account-id').value = accountId;
+    document.getElementById('gacha-account-label').textContent = `${acc.ign || acc.username} (Sisa DM saat ini: 💎 ${acc.diamond || 0})`;
+    document.getElementById('gacha-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('gacha-modal')?.classList.add('open');
+}
+
+function handleAddGachaLog(e) {
+    e.preventDefault();
+    const accountId = document.getElementById('gacha-account-id')?.value;
+    const acc = state.accounts.find(a => a.id === accountId);
+    if (!acc) { showToast("❌ Akun tidak ditemukan!", "error"); return; }
+
+    const baseType = document.getElementById('gacha-type')?.value || 'Basic';
+    const mapping = GACHA_TYPE_MAP[`${baseType} Gacha`];
+    const qty = parseInt(document.getElementById('gacha-qty')?.value || 0);
+    const dmUsed = parseInt(document.getElementById('gacha-dm-used')?.value || 0);
+    const date = document.getElementById('gacha-date')?.value || new Date().toISOString().split('T')[0];
+    if (!mapping) { showToast("❌ Tipe gacha tidak dikenal!", "error"); return; }
+    if (qty <= 0 || dmUsed <= 0) { showToast("❌ Isi jumlah item & DM yang abis dengan benar!", "error"); return; }
+    if ((acc.diamond || 0) < dmUsed) { showToast("❌ Sisa DM akun ini nggak cukup buat DM segitu! Catat dulu pembelian WDP-nya.", "error"); return; }
+
+    // Modal batch ini (Rupiah) = DM riil yang abis x rata-rata modal/DM akun (bukan
+    // konversi fixed 300/750), lalu dirata-rata tertimbang per item ke stok Gacha yang
+    // sudah ada sebelumnya — mirip logika WDP, tapi per-item, bukan per-DM.
+    const batchCost = dmUsed * (acc.avgDmCost || 0);
+    const oldStock = acc[mapping.stockField] || 0;
+    const oldAvgCost = acc[mapping.avgCostField] || 0;
+    const oldValue = oldStock * oldAvgCost;
+    const newStock = oldStock + qty;
+    const newAvgCost = newStock > 0 ? (oldValue + batchCost) / newStock : 0;
+
+    acc[mapping.stockField] = newStock;
+    acc[mapping.avgCostField] = newAvgCost;
+    // DM langsung dipotong sekarang (saat gacha beneran kejadian), bukan nanti pas dijual.
+    acc.diamond = (acc.diamond || 0) - dmUsed;
+
+    state.gachaLogs.unshift({
+        id: "gacha_" + Date.now(), accountId, accountName: acc.ign || acc.username,
+        baseType, qty, dmUsed, batchCost, avgCostAfter: newAvgCost, date
+    });
+
+    saveState();
+    document.getElementById('gacha-modal')?.classList.remove('open');
+    renderAll();
+    showToast(`✅ Hasil gacha dicatat! Modal rata-rata ${baseType} (Gacha) sekarang: Rp ${Math.round(newAvgCost).toLocaleString('id-ID')}/item`, "success");
+}
+
 function deleteAccount(id) {
     showConfirm("Apakah Anda yakin ingin menghapus akun penjual ini?", () => {
         state.accounts = state.accounts.filter(a => a.id !== id); saveState(); renderAll(); showToast("🗑️ Akun berhasil dihapus", "success");
@@ -335,10 +387,14 @@ function toggleDeliveryStatus(id) {
     const acc = needsAccount ? state.accounts.find(a => a.id === tx.accountId) : null;
     // WDP, Twilight, dan Diamond tidak punya akun penjual, jadi lewati penyesuaian stok akun
     if (needsAccount && !acc) return;
-    
+    const gachaInfo = GACHA_TYPE_MAP[tx.starlightType];
+
     if (tx.status === 'Booking') {
         if (tx.starlightType === 'Basic') { if ((acc.basic || 0) <= 0) return; acc.basic--; }
         else if (tx.starlightType === 'Premium') { if ((acc.premium || 0) <= 0) return; acc.premium--; }
+        // Jalur Gacha: yang ditahan cuma stok itemnya, DM-nya udah kepotong dari awal
+        // (sejak dicatat lewat "Catat Gacha"), jadi diamond gak disentuh di sini.
+        else if (gachaInfo) { if ((acc[gachaInfo.stockField] || 0) <= 0) return; acc[gachaInfo.stockField]--; }
         tx.status = 'Belum Dikirim';
     } else if (tx.status === 'Belum Dikirim') {
         tx.status = 'Sudah Dikirim';
@@ -352,23 +408,25 @@ function toggleDeliveryStatus(id) {
     }
     else {
         tx.status = 'Booking';
-        if (tx.starlightType === 'Basic') acc.basic++; else if (tx.starlightType === 'Premium') acc.premium++;
+        if (tx.starlightType === 'Basic') acc.basic++;
+        else if (tx.starlightType === 'Premium') acc.premium++;
+        else if (gachaInfo) acc[gachaInfo.stockField] = (acc[gachaInfo.stockField] || 0) + 1;
     }
     saveState(); renderAll(); showToast(`✅ Status: ${tx.status}`, "success");
 }
 
 // Notif "pengiriman sukses" khusus produk instan (Genshin Impact & Wuthering Waves).
-// Dikirim lewat Telegram (kalau sudah disetting) dan notifikasi browser (kalau izinnya
+// Dikirim lewat WhatsApp (kalau sudah disetting) dan notifikasi browser (kalau izinnya
 // sudah "granted"), persis polanya reminder H-1 tapi dipicu begitu status berubah,
 // bukan berdasarkan hitung mundur tanggal.
 function notifyInstantDeliverySuccess(tx, prodKey) {
     const productLabel = PRODUCT_CONFIG[prodKey]?.label || prodKey;
-    const textNotif = `<b>✅ PENGIRIMAN SUKSES!</b>\n\n` +
-        `<b>Pembeli:</b> ${tx.buyerName || '-'}\n` +
-        `<b>Produk:</b> ${productLabel}\n` +
-        `<b>Item:</b> ${formatItemLabel(tx)}\n\n` +
+    const textNotif = `*✅ PENGIRIMAN SUKSES!*\n\n` +
+        `*Pembeli:* ${tx.buyerName || '-'}\n` +
+        `*Produk:* ${productLabel}\n` +
+        `*Item:* ${formatItemLabel(tx)}\n\n` +
         `Pesanan sudah berhasil dikirim ke pembeli. 🌙`;
-    sendTelegramNotification(textNotif);
+    sendWhatsappNotification(textNotif);
 
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
@@ -383,9 +441,6 @@ function notifyInstantDeliverySuccess(tx, prodKey) {
 function checkGlobalOverdueAlert() {
     const todayStr = new Date().toISOString().split('T')[0];
     const hasUrgent = productTx().some(t => (t.status === 'Belum Dikirim' || t.status === 'Booking') && (t.estDeliveryDate || '') <= todayStr);
-    // Stok Basic/Premium/gift slot cuma konsep akun kasir Mobile Legends, jadi warning
-    // stok menipis ini hanya relevan (dan hanya dicek) di produk mobileleg.
-    const hasLowStock = currentProduct === 'mobileleg' && state.accounts.some(a => (a.basic || 0) < 2 || (a.premium || 0) < 2);
     const alertBox = document.getElementById('urgent-alert-container'); 
     const alertText = document.getElementById('alert-zone-text');
     
@@ -395,20 +450,7 @@ function checkGlobalOverdueAlert() {
         alertBox.classList.remove('hidden');
         alertText.innerHTML = `<strong>Alarm Pengiriman Mendesak!</strong> Ada pesanan menunggak hari ini! Silakan cek menu Info Pembeli.`;
         setMascotMood('pengingat', '⚠️ Ada pesanan menunggak, cek Info Pembeli ya!', 6000);
-    } else if(hasLowStock) {
-        alertBox.classList.remove('hidden'); alertBox.style.backgroundColor = "rgba(230, 126, 34, 0.15)"; alertBox.style.borderColor = "#e67e22";
-        alertText.innerHTML = `<strong>Pengingat Stok Menipis!</strong> Beberapa akun kasir kamu kehabisan stok / limit gift.`;
-        setMascotMood('pengingat', '📦 Stok akun kasir mulai menipis nih!', 6000);
     } else { alertBox.classList.add('hidden'); }
-}
-
-// Versi khusus Home: stok Basic/Premium akun kasir ML tetap relevan dipantau dari Home
-// (sebelum masuk ke workspace produk manapun), jadi ditampilkan terpisah di sini.
-function checkHomeLowStockAlert() {
-    const hasLowStock = state.accounts.some(a => (a.basic || 0) < 2 || (a.premium || 0) < 2);
-    const alertBox = document.getElementById('home-low-stock-alert');
-    if (!alertBox) return;
-    alertBox.classList.toggle('hidden', !hasLowStock);
 }
 
 function renderDailyAgenda() {
@@ -595,42 +637,56 @@ if ('serviceWorker' in window.navigator) {
     }
 }
 
-// FUNGSI UNTUK MENGIRIM PESAN KE TELEGRAM (DENGAN DETEKSI ERROR)
-async function sendTelegramNotification(message) {
-    const botToken = state.settings.telegramToken;
-    const chatId = state.settings.telegramChatId;
+// FUNGSI UNTUK MENGIRIM PESAN KE WHATSAPP (WhatsApp Cloud API resmi Meta, DENGAN DETEKSI ERROR)
+async function sendWhatsappNotification(message) {
+    const accessToken = state.settings.waAccessToken;
+    const phoneNumberId = state.settings.waPhoneNumberId;
+    const recipient = state.settings.waRecipientNumber;
 
-    if (!botToken || !chatId) {
-        console.warn('Telegram belum dikonfigurasi. Isi di menu Pengaturan.');
+    if (!accessToken || !phoneNumberId || !recipient) {
+        console.warn('WhatsApp belum dikonfigurasi. Isi di menu Pengaturan.');
         return;
     }
 
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    
+    const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
+
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                chat_id: chatId, 
-                text: message, 
-                parse_mode: 'HTML' 
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to: recipient,
+                type: 'text',
+                text: { body: message, preview_url: false }
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
-            console.error("Detail Error Telegram:", data);
-            showToast(`❌ Telegram Gagal: ${data.description}`, "error");
+            console.error("Detail Error WhatsApp:", data);
+            // Error paling umum: pesan dikirim di luar jendela 24 jam sejak balasan
+            // terakhir dari nomor tujuan, sehingga WhatsApp menolak pesan teks bebas
+            // dan mewajibkan pakai Template Message yang sudah disetujui Meta.
+            showToast(`❌ WhatsApp Gagal: ${data.error?.message || 'cek konfigurasi & jendela 24 jam'}`, "error");
         } else {
-            console.log("Notifikasi Telegram berhasil dikirim.");
+            console.log("Notifikasi WhatsApp berhasil dikirim.");
         }
-        
+
     } catch (error) {
-        console.error('Koneksi gagal ke Telegram:', error);
-        showToast("❌ Gagal terhubung ke server Telegram", "error");
+        console.error('Koneksi gagal ke WhatsApp:', error);
+        showToast("❌ Gagal terhubung ke server WhatsApp", "error");
     }
+}
+
+// Nama lama tetap disediakan sebagai alias, biar kalau ada pemanggilan lama
+// yang kelewat belum diganti, tetap jalan ke WhatsApp (bukan Telegram lagi).
+function sendTelegramNotification(message) {
+    return sendWhatsappNotification(message);
 }
 
 

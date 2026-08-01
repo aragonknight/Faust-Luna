@@ -3,7 +3,7 @@
 // (bagian dari script.js asli - FaustLuna Store)
 // ============================================================
 function usesSellerAccount(type) {
-    return type === 'Basic' || type === 'Premium';
+    return type === 'Basic' || type === 'Premium' || !!GACHA_TYPE_MAP[type];
 }
 
 function updateSalesFormForType() {
@@ -42,14 +42,19 @@ function updateAutoCapitalPreview() {
     if (!capitalAutoInfo) return;
     const type = document.getElementById('starlight-type')?.value;
     const dmPerUnit = DM_PER_TYPE[type];
-    if (!dmPerUnit) { capitalAutoInfo.textContent = ''; return; }
+    const gachaInfo = GACHA_TYPE_MAP[type];
+    if (!dmPerUnit && !gachaInfo) { capitalAutoInfo.textContent = ''; return; }
     const accId = document.getElementById('seller-account')?.value;
     const acc = state.accounts.find(a => a.id === accId);
-    const avgCost = acc ? (acc.avgDmCost || 0) : 0;
-    const modalPerItem = Math.round(avgCost * dmPerUnit);
-    capitalAutoInfo.textContent = acc
-        ? `💎 Modal otomatis: Rp ${modalPerItem.toLocaleString('id-ID')}/item (dari rata-rata modal DM akun "${acc.ign || acc.username}", sisa ${acc.diamond || 0} DM)`
-        : `💎 Pilih akun penjual dulu untuk lihat estimasi modal otomatis.`;
+    if (!acc) { capitalAutoInfo.textContent = `💎 Pilih akun penjual dulu untuk lihat estimasi modal otomatis.`; return; }
+    if (dmPerUnit) {
+        const avgCost = acc.avgDmCost || 0;
+        const modalPerItem = Math.round(avgCost * dmPerUnit);
+        capitalAutoInfo.textContent = `💎 Modal otomatis: Rp ${modalPerItem.toLocaleString('id-ID')}/item (dari rata-rata modal DM akun "${acc.ign || acc.username}", sisa ${acc.diamond || 0} DM)`;
+    } else if (gachaInfo) {
+        const modalPerItem = Math.round(acc[gachaInfo.avgCostField] || 0);
+        capitalAutoInfo.textContent = `🎰 Modal otomatis: Rp ${modalPerItem.toLocaleString('id-ID')}/item (rata-rata modal hasil gacha akun "${acc.ign || acc.username}", stok tersisa ${acc[gachaInfo.stockField] || 0} pcs)`;
+    }
 }
 
 
@@ -118,7 +123,6 @@ function goHome() {
     document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
     document.querySelectorAll('.sidebar-overlay').forEach(o => o.classList.remove('show'));
     renderHomeKeuangan();
-    checkHomeLowStockAlert();
 }
 
 // --- SISTEM MASKOT LUNA ---

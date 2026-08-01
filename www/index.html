@@ -213,26 +213,30 @@
                 </div>
 
                 <div class="premium-card">
-                    <div class="card-header-title">🔔 Notifikasi Telegram</div>
+                    <div class="card-header-title">🔔 Notifikasi WhatsApp</div>
                     <div class="invoice-divider"></div>
-                    <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Token &amp; Chat ID disimpan hanya di perangkat ini (localStorage), tidak lagi ditulis langsung di kode script.js.</p>
-                    <form id="form-settings-telegram">
+                    <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Token &amp; Phone Number ID disimpan hanya di perangkat ini (localStorage). Ambil dari Meta Business Manager &gt; WhatsApp &gt; API Setup.</p>
+                    <form id="form-settings-whatsapp">
                         <div class="form-group">
-                            <label>Bot Token Telegram</label>
-                            <input type="text" id="set-telegram-token" placeholder="Contoh: 123456:AA...">
+                            <label>Access Token (WhatsApp Cloud API)</label>
+                            <input type="text" id="set-wa-token" placeholder="Contoh: EAAxxxxxxxxxxxx...">
                         </div>
                         <div class="form-group">
-                            <label>Chat ID Telegram</label>
-                            <input type="text" id="set-telegram-chatid" placeholder="Contoh: 7302641126">
+                            <label>Phone Number ID</label>
+                            <input type="text" id="set-wa-phone-id" placeholder="Contoh: 123456789012345">
                         </div>
                         <div class="form-group">
-                            <label>H- Pengingat Kirim ke Telegram</label>
-                            <select id="set-telegram-hmin">
+                            <label>Nomor Tujuan (nomor WA kamu, format 62xxx)</label>
+                            <input type="text" id="set-wa-recipient" placeholder="Contoh: 6281234567890">
+                        </div>
+                        <div class="form-group">
+                            <label>H- Pengingat Kirim ke WhatsApp</label>
+                            <select id="set-wa-hmin">
                                 <option value="1">H-1 (1 hari sebelum)</option>
                                 <option value="2" selected>H-2 (2 hari sebelum)</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn-premium-action">💾 SIMPAN PENGATURAN TELEGRAM</button>
+                        <button type="submit" class="btn-premium-action">💾 SIMPAN PENGATURAN WHATSAPP</button>
                     </form>
                 </div>
 
@@ -580,11 +584,8 @@
             </div>
             <div id="rekap-premium-grid" class="premium-grid-layout"></div>
             
-            <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button id="export-btn" class="btn-premium-action" style="background: transparent; border: 1px solid var(--text-gold); color: var(--text-gold); font-size: 11px;">📤 EKSPOR DATA (BACKUP)</button>
-                <button id="import-trigger-btn" class="btn-premium-action" style="background: transparent; border: 1px solid var(--text-gold); color: var(--text-gold); font-size: 11px;">📥 IMPOR DATA (RESTORE)</button>
-                <input type="file" id="import-file-input" accept=".json" style="display: none;">
-                <button id="export-csv-btn" class="btn-premium-action" style="background: transparent; border: 1px solid var(--text-gold); color: var(--text-gold); font-size: 11px; grid-column: 1 / -1;">📊 EKSPOR KE EXCEL/CSV</button>
+            <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr; gap: 10px;">
+                <button id="export-csv-btn" class="btn-premium-action" style="background: transparent; border: 1px solid var(--text-gold); color: var(--text-gold); font-size: 11px;">📊 EKSPOR KE EXCEL/CSV</button>
             </div>
         </section>
 
@@ -793,5 +794,6 @@
     <script src="js/06-notif-search-reminder.js"></script>
     <script src="js/07-keuangan-laporan.js"></script>
     <script src="js/08-native-notif.js"></script>
+    <script src="js/09-native-enhancements.js"></script>
 </body>
 </html>

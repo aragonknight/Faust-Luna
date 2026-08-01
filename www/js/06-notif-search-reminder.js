@@ -1,5 +1,5 @@
 // ============================================================
-// JAM NAVBAR, NOTIFIKASI, SEARCH, POPUP LUNA, PENGINGAT TELEGRAM/BROWSER
+// JAM NAVBAR, NOTIFIKASI, SEARCH, POPUP LUNA, PENGINGAT WHATSAPP/BROWSER
 // (bagian dari script.js asli - FaustLuna Store)
 // ============================================================
 // --- JAM DIGITAL NAVBAR --- //
@@ -92,8 +92,7 @@ const LUNA_TIPS = [
     { img: 'luna-baca-buku.jpg', text: 'Tips: pakai fitur cari 🔍 buat nemuin transaksi pembeli dengan cepat.' },
     { img: 'luna-peluk-bintang.jpg', text: 'Semangat jualan hari ini, semoga omset makin cuan! ✨' },
     { img: 'luna-pengingat.jpg', text: 'Jangan lupa cek notifikasi 🔔 buat lihat pengiriman yang mau jatuh tempo.' },
-    { img: 'luna-terima-kasih.jpg', text: 'Makasih udah pakai FaustLuna Store buat kelola tokomu!' },
-    { img: 'luna-berhasil.jpg', text: 'Kalau stok akun kasir menipis, jangan lupa tambah slot baru di menu Akun.' }
+    { img: 'luna-terima-kasih.jpg', text: 'Makasih udah pakai FaustLuna Store buat kelola tokomu!' }
 ];
 
 function showLunaPopup() {
@@ -111,15 +110,15 @@ function showLunaPopup() {
     window._lunaPopupTimeout = setTimeout(() => popup.classList.add('hidden'), 5000);
 }
 
-// --- PENGINGAT OTOMATIS: TELEGRAM (H-N) & NOTIFIKASI BROWSER (H-1) --- //
+// --- PENGINGAT OTOMATIS: WHATSAPP (H-N) & NOTIFIKASI BROWSER (H-1) --- //
 function getAllActiveDeliverableTx() {
     // Semua produk (bukan cuma currentProduct) yang masih menunggu kirim dan punya tanggal estimasi kirim
     return state.transactions.filter(t => t.status !== 'Sudah Dikirim' && t.estDeliveryDate);
 }
 
-function checkTelegramDueReminder() {
-    const hmin = parseInt(state.settings.telegramHmin) || 2;
-    const notifiedKey = 'fl_telegram_notified';
+function checkWhatsappDueReminder() {
+    const hmin = parseInt(state.settings.waHmin) || 2;
+    const notifiedKey = 'fl_wa_notified';
     const notified = safeParse(notifiedKey, {});
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -131,13 +130,13 @@ function checkTelegramDueReminder() {
         if (daysLeft <= hmin) {
             const flag = `${t.id}`;
             if (!notified[flag]) {
-                const textNotif = `<b>⏰ PENGINGAT H-${hmin} PENGIRIMAN!</b>\n\n` +
-                    `<b>Pembeli:</b> ${t.buyerName || '-'}\n` +
-                    `<b>Item:</b> ${t.starlightType || '-'}\n` +
-                    `<b>Estimasi Kirim:</b> ${t.estDeliveryDate}\n` +
-                    `<b>Status:</b> ${t.status}\n\n` +
+                const textNotif = `*⏰ PENGINGAT H-${hmin} PENGIRIMAN!*\n\n` +
+                    `*Pembeli:* ${t.buyerName || '-'}\n` +
+                    `*Item:* ${t.starlightType || '-'}\n` +
+                    `*Estimasi Kirim:* ${t.estDeliveryDate}\n` +
+                    `*Status:* ${t.status}\n\n` +
                     `Yuk siap-siap diproses biar ga kelewat jatuh tempo! 🌙`;
-                sendTelegramNotification(textNotif);
+                sendWhatsappNotification(textNotif);
                 notified[flag] = true;
             }
         }
@@ -172,7 +171,7 @@ function checkH1BrowserReminders() {
 }
 
 function runAllReminderChecks() {
-    checkTelegramDueReminder();
+    checkWhatsappDueReminder();
     checkH1BrowserReminders();
 }
 

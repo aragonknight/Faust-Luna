@@ -44,7 +44,7 @@ async function cancelAllNativeReminders() {
     } catch (err) { console.error('Gagal membatalkan notifikasi native lama:', err); }
 }
 
-// Jadwalkan ulang semua notifikasi (pengiriman H-1/H-0 + stok menipis) berdasarkan
+// Jadwalkan ulang semua notifikasi (pengiriman H-1/H-0) berdasarkan
 // data transaksi & akun TERKINI. Dipanggil ulang tiap ada perubahan data (renderAll)
 // supaya jadwalnya selalu sinkron — notifikasi lama otomatis dibatalkan & diganti baru.
 async function scheduleNativeReminders() {
@@ -84,18 +84,6 @@ async function scheduleNativeReminders() {
             });
         }
     });
-
-    // Stok Basic/Premium akun kasir ML menipis — dikirim ~15 detik dari sekarang
-    // (bukan dijadwalkan jauh ke depan, karena statusnya bisa berubah kapan saja).
-    const hasLowStock = state.accounts.some(a => (a.basic || 0) < 2 || (a.premium || 0) < 2);
-    if (hasLowStock) {
-        notifications.push({
-            id: idCounter++,
-            title: '🌙 FaustLuna Store',
-            body: 'Stok akun kasir Mobile Legends kamu mulai menipis, cek menu Info Stok ya!',
-            schedule: { at: new Date(now.getTime() + 15000) },
-        });
-    }
 
     if (notifications.length > 0) {
         try {
