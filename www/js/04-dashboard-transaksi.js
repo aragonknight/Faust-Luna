@@ -495,15 +495,20 @@ function renderAccountGrid() {
             <div class="premium-row"><span class="lbl">Password:</span><span class="val highlight privacy-blur" style="font-family: monospace;">${acc.password || '-'}</span></div>
             <div class="premium-row"><span class="lbl">Cara Login:</span><span class="val" style="color:var(--text-gold); font-weight:bold;">${acc.login_method || 'Moonton'}</span></div>
             <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
-            <div style="font-size:10px; font-weight:bold; color:var(--text-muted); margin-bottom:2px;">📦 STOK BIASA</div>
-            <div class="premium-row"><span class="lbl">Basic:</span><span class="val highlight">${acc.basic || 0} Pcs</span></div>
-            <div class="premium-row"><span class="lbl">Premium:</span><span class="val highlight">${acc.premium || 0} Pcs</span></div>
-            <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
-            <div style="font-size:10px; font-weight:bold; color:var(--text-muted); margin-bottom:2px;">🎰 STOK GACHA</div>
-            <div class="premium-row"><span class="lbl">Basic (Gacha):</span><span class="val highlight">${acc.basicGacha || 0} Pcs</span></div>
-            <div class="premium-row"><span class="lbl">Premium (Gacha):</span><span class="val highlight">${acc.premiumGacha || 0} Pcs</span></div>
-            <div class="premium-row"><span class="lbl">Modal/Item Basic (Gacha):</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgGachaCostBasic || 0).toLocaleString('id-ID')}</span></div>
-            <div class="premium-row"><span class="lbl">Modal/Item Premium (Gacha):</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgGachaCostPremium || 0).toLocaleString('id-ID')}</span></div>
+            <div class="stok-tab-switch" style="display:flex; gap:6px; margin-bottom:8px;">
+                <button type="button" id="tab-biasa-${acc.id}" class="stok-tab-btn active" onclick="switchStokTab('${acc.id}','biasa')" style="flex:1; padding:6px; border-radius:8px; border:none; font-size:11px; font-weight:bold; cursor:pointer; background:var(--text-gold); color:#000;">📦 Biasa</button>
+                <button type="button" id="tab-gacha-${acc.id}" class="stok-tab-btn" onclick="switchStokTab('${acc.id}','gacha')" style="flex:1; padding:6px; border-radius:8px; border:none; font-size:11px; font-weight:bold; cursor:pointer; background:rgba(255,255,255,0.08); color:var(--text-muted);">🎰 Gacha</button>
+            </div>
+            <div id="stok-view-biasa-${acc.id}" class="stok-view">
+                <div class="premium-row"><span class="lbl">Basic:</span><span class="val highlight">${acc.basic || 0} Pcs</span></div>
+                <div class="premium-row"><span class="lbl">Premium:</span><span class="val highlight">${acc.premium || 0} Pcs</span></div>
+            </div>
+            <div id="stok-view-gacha-${acc.id}" class="stok-view" style="display:none;">
+                <div class="premium-row"><span class="lbl">Basic (Gacha):</span><span class="val highlight">${acc.basicGacha || 0} Pcs</span></div>
+                <div class="premium-row"><span class="lbl">Premium (Gacha):</span><span class="val highlight">${acc.premiumGacha || 0} Pcs</span></div>
+                <div class="premium-row"><span class="lbl">Modal/Item Basic (Gacha):</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgGachaCostBasic || 0).toLocaleString('id-ID')}</span></div>
+                <div class="premium-row"><span class="lbl">Modal/Item Premium (Gacha):</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgGachaCostPremium || 0).toLocaleString('id-ID')}</span></div>
+            </div>
             <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
             <div class="premium-row"><span class="lbl">Batas Gift:</span><span class="val green-glow">${acc.gift_slots || 0} / 3</span></div>
             <div class="premium-row"><span class="lbl">Diamonds:</span><span class="val">💎 ${acc.diamond || 0}</span></div>
@@ -518,6 +523,32 @@ function renderAccountGrid() {
         `;
         container.appendChild(card);
     });
+}
+
+// Toggle tampilan kartu akun antara "Stok Biasa" dan "Stok Gacha" — cuma satu
+// yang kelihatan sekaligus per akun, biar kartu gak kepanjangan.
+function switchStokTab(accId, tab) {
+    const viewBiasa = document.getElementById(`stok-view-biasa-${accId}`);
+    const viewGacha = document.getElementById(`stok-view-gacha-${accId}`);
+    const tabBiasa = document.getElementById(`tab-biasa-${accId}`);
+    const tabGacha = document.getElementById(`tab-gacha-${accId}`);
+    if (!viewBiasa || !viewGacha || !tabBiasa || !tabGacha) return;
+
+    const activeStyle = 'background:var(--text-gold); color:#000;';
+    const inactiveStyle = 'background:rgba(255,255,255,0.08); color:var(--text-muted);';
+    const baseStyle = 'flex:1; padding:6px; border-radius:8px; border:none; font-size:11px; font-weight:bold; cursor:pointer;';
+
+    if (tab === 'gacha') {
+        viewBiasa.style.display = 'none';
+        viewGacha.style.display = 'block';
+        tabBiasa.style.cssText = baseStyle + inactiveStyle;
+        tabGacha.style.cssText = baseStyle + activeStyle;
+    } else {
+        viewBiasa.style.display = 'block';
+        viewGacha.style.display = 'none';
+        tabBiasa.style.cssText = baseStyle + activeStyle;
+        tabGacha.style.cssText = baseStyle + inactiveStyle;
+    }
 }
 
 function openAccountModal(id = null) {

@@ -179,12 +179,54 @@ function productPengeluaran() {
     return state.pengeluaran.filter(p => (p.product || 'mobileleg') === currentProduct);
 }
 
+// Tab aktif buat filter varian Biasa/Gacha di form input penjualan (cuma relevan
+// buat produk yang punya varian "X Gacha", saat ini cuma Mobile Legends).
+let activeJenisTab = 'biasa';
+
 function renderVariationOptions() {
     const select = document.getElementById('starlight-type');
+    const tabGroup = document.getElementById('jenis-tab-switch-group');
     if (!select) return;
     const cfg = PRODUCT_CONFIG[currentProduct];
-    select.innerHTML = cfg.variations.map(v => `<option value="${v.value}">${v.text}</option>`).join('');
+    const hasGachaVariant = cfg.variations.some(v => v.value.endsWith(' Gacha'));
+
+    if (hasGachaVariant) {
+        tabGroup && (tabGroup.style.display = 'block');
+        activeJenisTab = 'biasa'; // reset ke tab Biasa tiap kali render ulang (ganti produk/dsb)
+        applyJenisTabStyle();
+        select.innerHTML = cfg.variations
+            .filter(v => !v.value.endsWith(' Gacha'))
+            .map(v => `<option value="${v.value}">${v.text}</option>`).join('');
+    } else {
+        tabGroup && (tabGroup.style.display = 'none');
+        select.innerHTML = cfg.variations.map(v => `<option value="${v.value}">${v.text}</option>`).join('');
+    }
     updateSalesFormForType();
+}
+
+// Diklik dari tombol tab Biasa/Gacha di form input penjualan — filter ulang
+// dropdown Variasi Produk supaya cuma nampilin varian sesuai tab yang aktif.
+function switchJenisTab(tab) {
+    const select = document.getElementById('starlight-type');
+    if (!select) return;
+    activeJenisTab = tab;
+    applyJenisTabStyle();
+    const cfg = PRODUCT_CONFIG[currentProduct];
+    select.innerHTML = cfg.variations
+        .filter(v => tab === 'gacha' ? v.value.endsWith(' Gacha') : !v.value.endsWith(' Gacha'))
+        .map(v => `<option value="${v.value}">${v.text}</option>`).join('');
+    updateSalesFormForType();
+}
+
+function applyJenisTabStyle() {
+    const tabBiasa = document.getElementById('jenis-tab-biasa');
+    const tabGacha = document.getElementById('jenis-tab-gacha');
+    if (!tabBiasa || !tabGacha) return;
+    const activeStyle = 'background:var(--text-gold); color:#000;';
+    const inactiveStyle = 'background:rgba(255,255,255,0.08); color:var(--text-muted);';
+    const baseStyle = 'flex:1; padding:6px; border-radius:8px; border:none; font-size:11px; font-weight:bold; cursor:pointer;';
+    tabBiasa.style.cssText = baseStyle + (activeJenisTab === 'biasa' ? activeStyle : inactiveStyle);
+    tabGacha.style.cssText = baseStyle + (activeJenisTab === 'gacha' ? activeStyle : inactiveStyle);
 }
 
 // Akun Penjual (rotasi & potong stok/gift slot) cuma dipakai untuk Starlight Basic/Premium.

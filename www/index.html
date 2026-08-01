@@ -430,6 +430,13 @@
                         <small id="rotation-hint" class="hint-text"></small>
                     </div>
                     
+                    <!-- Tab toggle Biasa/Gacha — cuma muncul kalau produk aktif punya varian Gacha (Mobile Legends) -->
+                    <div class="form-group" id="jenis-tab-switch-group" style="display:none;">
+                        <div style="display:flex; gap:6px; margin-bottom:8px;">
+                            <button type="button" id="jenis-tab-biasa" class="stok-tab-btn active" onclick="switchJenisTab('biasa')" style="flex:1; padding:6px; border-radius:8px; border:none; font-size:11px; font-weight:bold; cursor:pointer; background:var(--text-gold); color:#000;">📦 Biasa</button>
+                            <button type="button" id="jenis-tab-gacha" class="stok-tab-btn" onclick="switchJenisTab('gacha')" style="flex:1; padding:6px; border-radius:8px; border:none; font-size:11px; font-weight:bold; cursor:pointer; background:rgba(255,255,255,0.08); color:var(--text-muted);">🎰 Gacha</button>
+                        </div>
+                    </div>
                     <!-- DUA KOLOM BERDAMPINGAN: VARIASI PRODUK & JUMLAH QUANTITY (UNTUK SEMUA ITEM) -->
                     <div class="form-row">
                         <div class="form-group">
