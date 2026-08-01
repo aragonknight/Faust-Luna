@@ -162,6 +162,9 @@ function setupEventListeners() {
     document.getElementById('form-wdp-purchase')?.addEventListener('submit', handleAddWdpPurchase);
     document.getElementById('close-wdp-modal')?.addEventListener('click', () => document.getElementById('wdp-modal')?.classList.remove('open'));
     document.getElementById('close-wdp-history-modal')?.addEventListener('click', () => document.getElementById('wdp-history-modal')?.classList.remove('open'));
+    // Catat hasil Gacha (stok Basic/Premium jalur Gacha per akun)
+    document.getElementById('form-gacha-catat')?.addEventListener('submit', handleAddGachaLog);
+    document.getElementById('close-gacha-modal')?.addEventListener('click', () => document.getElementById('gacha-modal')?.classList.remove('open'));
     // Update preview modal otomatis tiap ganti akun penjual di form Input Penjualan
     document.getElementById('seller-account')?.addEventListener('change', updateAutoCapitalPreview);
     
@@ -200,8 +203,8 @@ function buildCRMList() {
 
 function renderDashboard() {
     const todayStr = new Date().toISOString().split('T')[0];
-    const totalBasic = state.accounts.reduce((sum, a) => sum + (parseInt(a.basic) || 0), 0);
-    const totalPremium = state.accounts.reduce((sum, a) => sum + (parseInt(a.premium) || 0), 0);
+    const totalBasic = state.accounts.reduce((sum, a) => sum + (parseInt(a.basic) || 0) + (parseInt(a.basicGacha) || 0), 0);
+    const totalPremium = state.accounts.reduce((sum, a) => sum + (parseInt(a.premium) || 0) + (parseInt(a.premiumGacha) || 0), 0);
     const totalDm = state.accounts.reduce((sum, a) => sum + (parseInt(a.diamond) || 0), 0);
     
     if(document.getElementById('global-stock-basic')) document.getElementById('global-stock-basic').textContent = `${totalBasic} Pcs`;
@@ -272,7 +275,6 @@ function renderAll() {
     renderLogs();
     renderDashboard();
     checkGlobalOverdueAlert();
-    checkHomeLowStockAlert();
     renderNotifBadge();
     scheduleNativeReminders();
     const dateInput = document.getElementById('pengeluaran-date');
@@ -310,6 +312,7 @@ function handleAddSale(e) {
     const qty = parseInt(document.getElementById('product-qty')?.value) || 1;
 
     let acc = null;
+    const gachaInfo = GACHA_TYPE_MAP[starlightType]; // ada isinya kalau tipe "... Gacha"
     if (needsAccount) {
         acc = state.accounts.find(a => a.id === accountId);
         if(!acc) { showToast("❌ Akun penjual tidak ditemukan!", "error"); return; }
@@ -317,12 +320,17 @@ function handleAddSale(e) {
         if (status !== 'Booking') {
             if (starlightType === 'Basic' && (acc.basic || 0) < qty) { showToast(`❌ Stok Basic tidak cukup!`, "error"); return; }
             if (starlightType === 'Premium' && (acc.premium || 0) < qty) { showToast(`❌ Stok Premium tidak cukup!`, "error"); return; }
+            if (gachaInfo && (acc[gachaInfo.stockField] || 0) < qty) { showToast(`❌ Stok ${starlightType} tidak cukup!`, "error"); return; }
             if ((acc.gift_slots || 0) < qty) { showToast(`❌ Slot gift tidak cukup!`, "error"); return; }
+            // Stok DM cuma dicek buat jalur Biasa (dmPerUnit) — jalur Gacha DM-nya udah
+            // dipotong sejak dicatat lewat "Catat Gacha", jadi gak dicek ulang di sini.
             if (dmPerUnit && (acc.diamond || 0) < dmPerUnit * qty) { showToast(`❌ Stok DM akun ini tidak cukup! Catat dulu pembelian WDP-nya.`, "error"); return; }
         }
-        // Modal Starlight Basic/Premium SELALU otomatis dari rata-rata modal/DM akun
-        // ini (bukan diketik manual), biar gak salah hitung kayak kasus WDP campur harga.
+        // Modal Starlight Basic/Premium (Biasa) SELALU otomatis dari rata-rata modal/DM
+        // akun ini. Modal jalur Gacha otomatis dari rata-rata modal/item hasil gacha akun
+        // ini (dihitung dari DM riil yang abis pas "Catat Gacha", bukan konversi fixed).
         if (dmPerUnit) priceCapital = Math.round((acc.avgDmCost || 0) * dmPerUnit);
+        else if (gachaInfo) priceCapital = Math.round(acc[gachaInfo.avgCostField] || 0);
     }
 
     const rawId = document.getElementById('buyer-id')?.value.trim() || '';
@@ -343,10 +351,13 @@ function handleAddSale(e) {
             if (needsAccount && status !== 'Booking') {
                 if (starlightType === 'Basic') acc.basic--;
                 else if (starlightType === 'Premium') acc.premium--;
+                else if (gachaInfo) acc[gachaInfo.stockField] = (acc[gachaInfo.stockField] || 0) - 1;
                 acc.gift_slots--;
+                // Diamond cuma dipotong buat jalur Biasa; jalur Gacha diamond-nya udah
+                // dipotong dari awal pas dicatat lewat "Catat Gacha".
                 if (dmPerUnit) acc.diamond = (acc.diamond || 0) - dmPerUnit;
             }
-            const isStarlightProduct = starlightType === 'Basic' || starlightType === 'Premium';
+            const isStarlightProduct = starlightType === 'Basic' || starlightType === 'Premium' || !!gachaInfo;
                             let estDeliveryDate = purchaseDate;
             if (isStarlightProduct) {
                 if (status === 'Booking') {
@@ -425,7 +436,7 @@ function autoCleanOldTrash() {
 
 function exportDataToJSON() {
     try {
-        const dataBackup = { transactions: state.transactions, accounts: state.accounts, trash: state.trash, theme: state.theme, ledger: state.ledger, logs: state.logs, capitalPrices: state.capitalPrices, wdpPurchases: state.wdpPurchases, pengeluaran: state.pengeluaran, homeExpenses: state.homeExpenses, financeAdjustment: state.financeAdjustment };
+        const dataBackup = { transactions: state.transactions, accounts: state.accounts, trash: state.trash, theme: state.theme, ledger: state.ledger, logs: state.logs, capitalPrices: state.capitalPrices, wdpPurchases: state.wdpPurchases, gachaLogs: state.gachaLogs, pengeluaran: state.pengeluaran, homeExpenses: state.homeExpenses, financeAdjustment: state.financeAdjustment };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataBackup, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
@@ -448,6 +459,7 @@ function importDataFromJSON(e) {
                     state.trash = parsed.trash || []; state.ledger = parsed.ledger || []; state.logs = parsed.logs || [];
                     state.capitalPrices = parsed.capitalPrices || { "Basic": 25000, "Premium": 25000, "WDP": 25000, "Twilight": 25000, "Custom DM": 25000, "Genshin Impact": 25000, "Wuthering Waves": 25000 };
                     state.wdpPurchases = parsed.wdpPurchases || [];
+                    state.gachaLogs = parsed.gachaLogs || [];
                     state.pengeluaran = parsed.pengeluaran || [];
                     state.homeExpenses = parsed.homeExpenses || [];
                     state.financeAdjustment = parsed.financeAdjustment || { pemasukan: 0, saldo: 0 };
@@ -505,14 +517,12 @@ function renderAccountGrid() {
     const sortMode = document.getElementById('stok-sort-select')?.value || 'default';
     let accountsToRender = [...state.accounts];
     if (sortMode === 'stok-terendah') {
-        accountsToRender.sort((a, b) => ((a.basic || 0) + (a.premium || 0)) - ((b.basic || 0) + (b.premium || 0)));
+        accountsToRender.sort((a, b) => ((a.basic || 0) + (a.premium || 0) + (a.basicGacha || 0) + (a.premiumGacha || 0)) - ((b.basic || 0) + (b.premium || 0) + (b.basicGacha || 0) + (b.premiumGacha || 0)));
     } else if (sortMode === 'gift-terendah') {
         accountsToRender.sort((a, b) => (a.gift_slots || 0) - (b.gift_slots || 0));
     }
     accountsToRender.forEach(acc => {
-        const isLow = (acc.basic || 0) < 2 || (acc.premium || 0) < 2 || (acc.gift_slots || 0) <= 0;
         const card = document.createElement('div'); card.className = `premium-card`;
-        if(isLow) card.style.borderColor = 'var(--danger-red)';
         
         card.innerHTML = `
             <div class="card-header-title">🛡️ ${acc.ign || 'Tanpa IGN'}</div>
@@ -521,13 +531,22 @@ function renderAccountGrid() {
             <div class="premium-row"><span class="lbl">Password:</span><span class="val highlight privacy-blur" style="font-family: monospace;">${acc.password || '-'}</span></div>
             <div class="premium-row"><span class="lbl">Cara Login:</span><span class="val" style="color:var(--text-gold); font-weight:bold;">${acc.login_method || 'Moonton'}</span></div>
             <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
+            <div style="font-size:10px; font-weight:bold; color:var(--text-muted); margin-bottom:2px;">📦 STOK BIASA</div>
             <div class="premium-row"><span class="lbl">Basic:</span><span class="val highlight">${acc.basic || 0} Pcs</span></div>
             <div class="premium-row"><span class="lbl">Premium:</span><span class="val highlight">${acc.premium || 0} Pcs</span></div>
+            <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
+            <div style="font-size:10px; font-weight:bold; color:var(--text-muted); margin-bottom:2px;">🎰 STOK GACHA</div>
+            <div class="premium-row"><span class="lbl">Basic (Gacha):</span><span class="val highlight">${acc.basicGacha || 0} Pcs</span></div>
+            <div class="premium-row"><span class="lbl">Premium (Gacha):</span><span class="val highlight">${acc.premiumGacha || 0} Pcs</span></div>
+            <div class="premium-row"><span class="lbl">Modal/Item Basic (Gacha):</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgGachaCostBasic || 0).toLocaleString('id-ID')}</span></div>
+            <div class="premium-row"><span class="lbl">Modal/Item Premium (Gacha):</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgGachaCostPremium || 0).toLocaleString('id-ID')}</span></div>
+            <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
             <div class="premium-row"><span class="lbl">Batas Gift:</span><span class="val green-glow">${acc.gift_slots || 0} / 3</span></div>
             <div class="premium-row"><span class="lbl">Diamonds:</span><span class="val">💎 ${acc.diamond || 0}</span></div>
             <div class="premium-row"><span class="lbl">Rata-rata Modal/DM:</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgDmCost || 0).toLocaleString('id-ID')}</span></div>
             <div class="card-action-footer">
                 <button class="btn-mini-sec" onclick="openWdpModal('${acc.id}')">💰 Beli WDP</button>
+                <button class="btn-mini-sec" onclick="openGachaModal('${acc.id}')">🎰 Catat Gacha</button>
                 <button class="btn-mini-sec" onclick="renderWdpHistory('${acc.id}')">🧾 Riwayat</button>
                 <button class="btn-mini-sec" onclick="openAccountModal('${acc.id}')">✏️ Edit</button>
                 <button class="btn-mini-danger" onclick="deleteAccount('${acc.id}')">🗑️ Hapus</button>
@@ -549,6 +568,8 @@ function openAccountModal(id = null) {
         if(document.getElementById('acc-login-method')) document.getElementById('acc-login-method').value = acc.login_method || 'Moonton';
         if(document.getElementById('acc-basic')) document.getElementById('acc-basic').value = acc.basic || 0;
         if(document.getElementById('acc-premium')) document.getElementById('acc-premium').value = acc.premium || 0;
+        if(document.getElementById('acc-basic-gacha')) document.getElementById('acc-basic-gacha').value = acc.basicGacha || 0;
+        if(document.getElementById('acc-premium-gacha')) document.getElementById('acc-premium-gacha').value = acc.premiumGacha || 0;
         if(document.getElementById('acc-gift')) document.getElementById('acc-gift').value = acc.gift_slots || 0;
         if(document.getElementById('acc-dm')) document.getElementById('acc-dm').value = acc.diamond || 0;
     } else { 
@@ -566,13 +587,15 @@ function handleSaveAccount(e) {
     const login_method = document.getElementById('acc-login-method')?.value || 'Moonton';
     const basic = parseInt(document.getElementById('acc-basic')?.value || 0);
     const premium = parseInt(document.getElementById('acc-premium')?.value || 0);
+    const basicGacha = parseInt(document.getElementById('acc-basic-gacha')?.value || 0);
+    const premiumGacha = parseInt(document.getElementById('acc-premium-gacha')?.value || 0);
     const gift_slots = parseInt(document.getElementById('acc-gift')?.value || 0);
     const diamond = parseInt(document.getElementById('acc-dm')?.value || 0);
     
     if(id) {
         const acc = state.accounts.find(a => a.id === id);
-        Object.assign(acc, { ign, username, password, login_method, basic, premium, gift_slots, diamond });
-    } else { state.accounts.push({ id: "acc_"+Date.now(), ign, username, password, login_method, basic, premium, gift_slots, diamond, avgDmCost: 0 }); }
+        Object.assign(acc, { ign, username, password, login_method, basic, premium, gift_slots, diamond, basicGacha, premiumGacha });
+    } else { state.accounts.push({ id: "acc_"+Date.now(), ign, username, password, login_method, basic, premium, gift_slots, diamond, basicGacha, premiumGacha, avgDmCost: 0, avgGachaCostBasic: 0, avgGachaCostPremium: 0 }); }
     saveState(); document.getElementById('account-modal')?.classList.remove('open'); renderAll(); showToast("✅ Akun kasir disimpan!", "success");
 }
 

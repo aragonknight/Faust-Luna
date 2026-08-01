@@ -87,10 +87,6 @@
 
         <main class="app-container">
             <section id="page-home-dashboard" class="spa-page active">
-                <div id="home-low-stock-alert" class="urgent-alert hidden" style="background-color: rgba(230, 126, 34, 0.15); border-color: #e67e22;">
-                    <img src="assets/maskot/luna-pengingat.jpg" alt="Luna Pengingat" class="maskot-inline-icon">
-                    <div class="alert-text"><strong>Pengingat Stok Menipis!</strong> Beberapa akun kasir Mobile Legends kamu kehabisan stok / limit gift.</div>
-                </div>
                 <div class="premium-card" style="display:flex; align-items:center; gap:14px; margin-bottom:15px;">
                     <img src="assets/maskot/luna-hai.jpg" alt="Luna" style="width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--text-gold); flex-shrink:0;">
                     <div>
@@ -673,9 +669,15 @@
                 <div class="form-group"><label>Username / Email Akun</label><input type="text" id="acc-username" required></div>
                 <div class="form-group"><label>Password Akun</label><input type="text" id="acc-password" required></div>
                 <div class="form-group"><label>Cara Login</label><input type="text" id="acc-login-method" placeholder="Contoh: Moonton / Google / Tiktok / FB" required></div>
+                <div class="form-group" style="margin-bottom:2px;"><label style="color:var(--text-gold); font-size:11px;">📦 STOK BIASA</label></div>
                 <div class="form-row">
                     <div class="form-group"><label>Stok Basic</label><input type="number" id="acc-basic" value="0" min="0" required></div>
                     <div class="form-group"><label>Stok Premium</label><input type="number" id="acc-premium" value="0" min="0" required></div>
+                </div>
+                <div class="form-group" style="margin-bottom:2px;"><label style="color:var(--text-gold); font-size:11px;">🎰 STOK GACHA</label></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Stok Basic (Gacha)</label><input type="number" id="acc-basic-gacha" value="0" min="0" required></div>
+                    <div class="form-group"><label>Stok Premium (Gacha)</label><input type="number" id="acc-premium-gacha" value="0" min="0" required></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Limit Gift</label><input type="number" id="acc-gift" value="3" min="0" max="3" required></div>
@@ -702,6 +704,31 @@
                 <div class="form-group"><label>Tanggal Beli</label><input type="date" id="wdp-date" required></div>
                 <p style="font-size:10px; color:var(--text-muted);">Rata-rata modal per DM akun ini akan otomatis dihitung ulang (dicampur sama sisa stok DM lama), dan nominal ini otomatis tercatat sebagai Pengeluaran di Catatan Keuangan Gabungan.</p>
                 <button type="submit" class="btn-premium-action" style="margin-top: 10px;">💾 SIMPAN PEMBELIAN</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="gacha-modal" class="modal">
+        <div class="modal-content invoice-card-box" style="border-style: solid;">
+            <span class="close-modal" id="close-gacha-modal">&times;</span>
+            <div class="invoice-header-title" style="font-size: 17px;">🎰 CATAT HASIL GACHA</div>
+            <div class="invoice-divider"></div>
+            <p id="gacha-account-label" style="font-size:11px; color:var(--text-muted); margin-bottom:10px;"></p>
+            <form id="form-gacha-catat">
+                <input type="hidden" id="gacha-account-id">
+                <div class="form-group"><label>Tipe Starlight</label>
+                    <select id="gacha-type">
+                        <option value="Basic">Basic</option>
+                        <option value="Premium">Premium</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Jumlah Item Didapat</label><input type="number" id="gacha-qty" min="1" value="1" required></div>
+                    <div class="form-group"><label>Total DM yang Abis</label><input type="number" id="gacha-dm-used" min="1" placeholder="Contoh: 140" required></div>
+                </div>
+                <div class="form-group"><label>Tanggal</label><input type="date" id="gacha-date" required></div>
+                <p style="font-size:10px; color:var(--text-muted);">DM di atas langsung dipotong dari sisa DM akun ini (bukan konversi fixed 300/750), dan modal rata-rata per item stok Gacha akan dihitung ulang otomatis.</p>
+                <button type="submit" class="btn-premium-action" style="margin-top: 10px;">💾 SIMPAN HASIL GACHA</button>
             </form>
         </div>
     </div>
