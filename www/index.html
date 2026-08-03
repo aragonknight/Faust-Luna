@@ -20,7 +20,23 @@
             <h1 class="landing-title">FAUSTLUNA STORE</h1>
             <p class="landing-tagline">Top-Up Starlight &amp; Diamond Mobile Legends Terpercaya, Aman, dan Cepat.</p>
             <img src="assets/maskot/luna-baca-buku.jpg" class="landing-maskot" alt="Luna">
-            <button id="btn-enter-app" class="btn-premium-action landing-btn">🚀 Masuk ke Toko</button>
+
+            <div id="landing-loading" class="hidden" style="margin: 16px 0; font-size: 13px; color: var(--text-muted);">
+                ⏳ Memuat data akun kamu...
+            </div>
+
+            <form id="form-landing-login" style="width: 100%; max-width: 320px; margin-top: 10px;">
+                <div class="form-group" style="text-align:left;">
+                    <label>Email</label>
+                    <input type="email" id="login-email" placeholder="emailkamu@gmail.com" required autocomplete="username">
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
+                </div>
+                <div id="login-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin-bottom:8px;"></div>
+                <button type="submit" id="btn-enter-app" class="btn-premium-action landing-btn" style="width:100%;">🚀 Masuk ke Toko</button>
+            </form>
         </div>
     </div>
 
@@ -213,6 +229,14 @@
                 </div>
 
                 <div class="premium-card">
+                    <div class="card-header-title">👤 Akun</div>
+                    <div class="invoice-divider"></div>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Login sebagai: <strong id="active-account-email" style="color:var(--text-gold);">-</strong></p>
+                    <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Data kamu otomatis tersimpan online setiap ada perubahan — gak perlu backup manual lagi. Data ini cuma bisa diakses lewat akun ini, terpisah total dari akun lain.</p>
+                    <button id="btn-logout" class="btn-premium-action" style="background:transparent; border:1px solid #ff6b6b; color:#ff6b6b;">🚪 Keluar (Logout)</button>
+                </div>
+
+                <div class="premium-card" style="margin-top:15px;">
                     <div class="card-header-title">📱 Notifikasi & Pengingat di HP</div>
                     <div class="invoice-divider"></div>
                     <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Notifikasi muncul di status bar HP (tetap jalan walau aplikasi ditutup) untuk pesanan baru masuk, pengiriman sukses, dan pengingat H- sebelum jatuh tempo kirim.</p>
@@ -229,25 +253,9 @@
                 </div>
 
                 <div class="premium-card" style="margin-top:15px;">
-                    <div class="card-header-title">☁️ Sinkronisasi Supabase (Cloud Backup)</div>
+                    <div class="card-header-title">☁️ Sinkronisasi Manual (Cadangan)</div>
                     <div class="invoice-divider"></div>
-                    <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Isi Project URL &amp; anon key dari project Supabase kamu. Buat 1 tabel dulu di Supabase dengan SQL berikut:</p>
-                    <pre style="font-size:10px; background:#091124; padding:8px; border-radius:6px; overflow-x:auto; white-space:pre-wrap;">create table faustluna_backup (
-  id text primary key,
-  data jsonb,
-  updated_at timestamptz default now()
-);</pre>
-                    <form id="form-settings-supabase">
-                        <div class="form-group">
-                            <label>Supabase Project URL</label>
-                            <input type="text" id="set-supabase-url" placeholder="https://xxxx.supabase.co">
-                        </div>
-                        <div class="form-group">
-                            <label>Supabase Anon Key</label>
-                            <input type="text" id="set-supabase-key" placeholder="ey...">
-                        </div>
-                        <button type="submit" class="btn-premium-action">💾 SIMPAN PENGATURAN SUPABASE</button>
-                    </form>
+                    <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Data kamu udah otomatis tersinkron ke akun yang login. Tombol di bawah ini cuma cadangan buat maksa sinkron manual kalau perlu (misal abis offline lama).</p>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
                         <button id="btn-supabase-push" class="btn-premium-action" style="background:transparent; border:1px solid var(--text-gold); color:var(--text-gold); font-size:11px;">☁️ BACKUP KE SUPABASE</button>
                         <button id="btn-supabase-pull" class="btn-premium-action" style="background:transparent; border:1px solid var(--text-gold); color:var(--text-gold); font-size:11px;">⬇️ TARIK DATA DARI SUPABASE</button>
@@ -781,5 +789,6 @@
     <script src="js/07-keuangan-laporan.js"></script>
     <script src="js/08-native-notif.js"></script>
     <script src="js/09-native-enhancements.js"></script>
+    <script src="js/10-auth-sync.js"></script>
 </body>
 </html>

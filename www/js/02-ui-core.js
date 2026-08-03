@@ -187,13 +187,10 @@ function initMascot() {
 function initLandingPage() {
     const landing = document.getElementById('landing-page');
     if (!landing) { initMascot(); return; }
-
-    if (sessionStorage.getItem('fl_landing_entered')) {
-        landing.classList.add('hide');
-        initMascot();
-    }
-    // Klik tombol #btn-enter-app ditangani lewat delegasi event di DOMContentLoaded
-    // supaya tombol tetap berfungsi walau ada error di proses init lainnya.
+    // Landing page sekarang isinya form login. Kapan dia ketutup murni
+    // ditentukan status login (lihat initAuthGate/enterAppAfterLogin di
+    // 10-auth-sync.js) -- bukan lagi flag sessionStorage kayak dulu, supaya
+    // orang yang belum/sudah logout tetap ketemu form login, bukan ke-skip.
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -201,20 +198,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const appVersionLabel = document.getElementById('app-version-label');
     if (appVersionLabel) appVersionLabel.textContent = `🔒 Secure v${APP_VERSION}`;
 
-    // Tombol landing dipasang PALING AWAL & pakai delegasi event, supaya tetap
-    // berfungsi walau ada error di bagian init lain di bawahnya.
+    // Tombol landing dulu langsung nutup landing page pas diklik (gak ada
+    // login). Sekarang landing page isinya form login (lihat 10-auth-sync.js:
+    // handleLoginSubmit & enterAppAfterLogin) -- landing cuma ditutup SETELAH
+    // login berhasil, bukan langsung pas tombolnya diklik.
     initLandingPage();
-    document.addEventListener('click', (e) => {
-        if (e.target && e.target.id === 'btn-enter-app') {
-            const landing = document.getElementById('landing-page');
-            if (landing && !landing.classList.contains('hide')) {
-                playSound('click');
-                sessionStorage.setItem('fl_landing_entered', '1');
-                landing.classList.add('hide');
-                initMascot();
-            }
-        }
-    });
 
     try {
         initTheme();
@@ -300,7 +288,12 @@ window.addEventListener('beforeinstallprompt', (e) => {
     if (installBtn) installBtn.classList.remove('hidden');
 });
 
-function saveState() {
+// Nama asli fungsi ini "saveState" (nyimpen ke localStorage doang). Sekarang
+// dipecah: saveStateLocal() = kerjaan lama (nyimpen lokal), sementara
+// saveState() jadi wrapper yang SELALU dipanggil kode lain (nama & pemakaian
+// gak berubah di tempat lain), tapi tambahin auto-sync ke Supabase abis nyimpen
+// lokal -- jadi gak perlu ubah ratusan pemanggilan saveState() yang udah ada.
+function saveStateLocal() {
     localStorage.setItem('fl_transactions', JSON.stringify(state.transactions));
     localStorage.setItem('fl_accounts', JSON.stringify(state.accounts));
     localStorage.setItem('fl_trash', JSON.stringify(state.trash));
@@ -312,6 +305,11 @@ function saveState() {
     localStorage.setItem('fl_capital_prices', JSON.stringify(state.capitalPrices));
     localStorage.setItem('fl_settings', JSON.stringify(state.settings));
     localStorage.setItem('fl_finance_adjustment', JSON.stringify(state.financeAdjustment));
+}
+
+function saveState() {
+    saveStateLocal();
+    if (typeof scheduleAutoSync === 'function') scheduleAutoSync();
 }
 
 // Ubah manual nominal Pemasukan atau Saldo. Nilai ini ditambahkan (boleh minus)

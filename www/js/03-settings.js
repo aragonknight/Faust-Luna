@@ -93,9 +93,14 @@ async function pushStateToSupabase() {
         privacyMode: state.privacyMode, financeAdjustment: state.financeAdjustment
     };
 
+    // Kalau lagi login, data disimpan di baris milik akun itu (kepisah per
+    // akun). Kalau belum login (misal Supabase gagal dimuat), fallback ke
+    // baris "main" lama biar tombol manual ini tetap bisa dipakai.
+    const rowId = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser.id : 'main';
+
     try {
         const { error } = await client.from('faustluna_backup').upsert({
-            id: 'main', data: payload, updated_at: new Date().toISOString()
+            id: rowId, data: payload, updated_at: new Date().toISOString()
         });
         if (error) throw error;
         showToast('☁️ Backup ke Supabase berhasil!', 'success');
@@ -110,8 +115,10 @@ async function pullStateFromSupabase() {
     const client = getSupabaseClient();
     if (!client) { showToast('❌ Isi dulu Project URL & Anon Key Supabase di atas.', 'error'); return; }
 
+    const rowId = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser.id : 'main';
+
     try {
-        const { data, error } = await client.from('faustluna_backup').select('*').eq('id', 'main').single();
+        const { data, error } = await client.from('faustluna_backup').select('*').eq('id', rowId).single();
         if (error) throw error;
         if (!data || !data.data) { showToast('⚠️ Belum ada data backup di Supabase.', 'error'); return; }
 
