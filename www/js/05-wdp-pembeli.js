@@ -388,6 +388,7 @@ function toggleDeliveryStatus(id) {
     // WDP, Twilight, dan Diamond tidak punya akun penjual, jadi lewati penyesuaian stok akun
     if (needsAccount && !acc) return;
     const gachaInfo = GACHA_TYPE_MAP[tx.starlightType];
+    const dmPerUnit = DM_PER_TYPE[tx.starlightType]; // undefined kalau bukan Basic/Premium (gacha gak dipotong DM di sini)
 
     if (tx.status === 'Booking') {
         if (tx.starlightType === 'Basic') { if ((acc.basic || 0) <= 0) return; acc.basic--; }
@@ -395,6 +396,12 @@ function toggleDeliveryStatus(id) {
         // Jalur Gacha: yang ditahan cuma stok itemnya, DM-nya udah kepotong dari awal
         // (sejak dicatat lewat "Catat Gacha"), jadi diamond gak disentuh di sini.
         else if (gachaInfo) { if ((acc[gachaInfo.stockField] || 0) <= 0) return; acc[gachaInfo.stockField]--; }
+        // Slot gift & DM ikut kepotong di sini juga (dulu kelewat, cuma stok starlight
+        // yang kepotong) — samain dengan jalur input transaksi langsung non-Booking.
+        if (needsAccount) {
+            acc.gift_slots = (acc.gift_slots || 0) - 1;
+            if (dmPerUnit) acc.diamond = (acc.diamond || 0) - dmPerUnit;
+        }
         tx.status = 'Belum Dikirim';
     } else if (tx.status === 'Belum Dikirim') {
         tx.status = 'Sudah Dikirim';
@@ -411,6 +418,11 @@ function toggleDeliveryStatus(id) {
         if (tx.starlightType === 'Basic') acc.basic++;
         else if (tx.starlightType === 'Premium') acc.premium++;
         else if (gachaInfo) acc[gachaInfo.stockField] = (acc[gachaInfo.stockField] || 0) + 1;
+        // Balikin lagi slot gift & DM yang tadi dipotong, karena batal lagi ke Booking.
+        if (needsAccount) {
+            acc.gift_slots = (acc.gift_slots || 0) + 1;
+            if (dmPerUnit) acc.diamond = (acc.diamond || 0) + dmPerUnit;
+        }
     }
     saveState(); renderAll(); showToast(`✅ Status: ${tx.status}`, "success");
 }
@@ -427,6 +439,7 @@ function notifyInstantDeliverySuccess(tx, prodKey) {
         `*Item:* ${formatItemLabel(tx)}\n\n` +
         `Pesanan sudah berhasil dikirim ke pembeli. 🌙`;
     sendWhatsappNotification(textNotif);
+    sendNativeInstantNotification('✅ Pengiriman Sukses', `${tx.buyerName || '-'} — ${productLabel} (${formatItemLabel(tx)})`);
 
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
@@ -637,56 +650,16 @@ if ('serviceWorker' in window.navigator) {
     }
 }
 
-// FUNGSI UNTUK MENGIRIM PESAN KE WHATSAPP (WhatsApp Cloud API resmi Meta, DENGAN DETEKSI ERROR)
+// Notifikasi WhatsApp sudah dihapus dari aplikasi — notifikasi toko sekarang
+// murni lewat notifikasi native (status bar HP) dan notifikasi browser. Fungsi
+// ini sengaja dibiarkan sebagai no-op (bukan dihapus total) supaya pemanggilan
+// lama yang mungkin masih ada di kode lain tetap aman, tidak error.
 async function sendWhatsappNotification(message) {
-    const accessToken = state.settings.waAccessToken;
-    const phoneNumberId = state.settings.waPhoneNumberId;
-    const recipient = state.settings.waRecipientNumber;
-
-    if (!accessToken || !phoneNumberId || !recipient) {
-        console.warn('WhatsApp belum dikonfigurasi. Isi di menu Pengaturan.');
-        return;
-    }
-
-    const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({
-                messaging_product: 'whatsapp',
-                to: recipient,
-                type: 'text',
-                text: { body: message, preview_url: false }
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            console.error("Detail Error WhatsApp:", data);
-            // Error paling umum: pesan dikirim di luar jendela 24 jam sejak balasan
-            // terakhir dari nomor tujuan, sehingga WhatsApp menolak pesan teks bebas
-            // dan mewajibkan pakai Template Message yang sudah disetujui Meta.
-            showToast(`❌ WhatsApp Gagal: ${data.error?.message || 'cek konfigurasi & jendela 24 jam'}`, "error");
-        } else {
-            console.log("Notifikasi WhatsApp berhasil dikirim.");
-        }
-
-    } catch (error) {
-        console.error('Koneksi gagal ke WhatsApp:', error);
-        showToast("❌ Gagal terhubung ke server WhatsApp", "error");
-    }
+    // sengaja kosong — notifikasi WA sudah tidak dipakai lagi.
 }
 
-// Nama lama tetap disediakan sebagai alias, biar kalau ada pemanggilan lama
-// yang kelewat belum diganti, tetap jalan ke WhatsApp (bukan Telegram lagi).
 function sendTelegramNotification(message) {
-    return sendWhatsappNotification(message);
+    // sengaja kosong — notifikasi Telegram sudah tidak dipakai lagi.
 }
 
 

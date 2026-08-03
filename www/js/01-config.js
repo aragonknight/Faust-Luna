@@ -14,9 +14,6 @@ const APP_VERSION = "2";
 // belum pernah diubah lewat menu Pengaturan di aplikasi (menu Pengaturan
 // tetap bisa dipakai kalau suatu saat mau ganti tanpa edit kode lagi).
 const DEFAULT_CONFIG = {
-    waAccessToken: '',
-    waPhoneNumberId: '',
-    waRecipientNumber: '',
     waHmin: 2,
     supabaseUrl: 'https://apjjnfmxvpofrrklithz.supabase.co',
     supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwampuZm14dnBvZnJya2xpdGh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MzkxMjgsImV4cCI6MjEwMDUxNTEyOH0.Bqg4KqaKt86bW6fMZjplo7X5d1fObb6SZ-uU_zjVLrg'
@@ -68,9 +65,6 @@ let state = {
     // untuk Pemasukan & Saldo di halaman "Catatan Keuangan Gabungan".
     financeAdjustment: safeParse('fl_finance_adjustment', { pemasukan: 0, saldo: 0 }),
     settings: safeParse('fl_settings', {
-        waAccessToken: DEFAULT_CONFIG.waAccessToken,
-        waPhoneNumberId: DEFAULT_CONFIG.waPhoneNumberId,
-        waRecipientNumber: DEFAULT_CONFIG.waRecipientNumber,
         waHmin: DEFAULT_CONFIG.waHmin,
         h1NotifEnabled: false,
         supabaseUrl: DEFAULT_CONFIG.supabaseUrl,

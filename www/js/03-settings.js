@@ -4,24 +4,19 @@
 // ============================================================
 // --- HALAMAN PENGATURAN --- //
 function renderSettingsForm() {
-    if(document.getElementById('set-wa-token')) document.getElementById('set-wa-token').value = state.settings.waAccessToken || '';
-    if(document.getElementById('set-wa-phone-id')) document.getElementById('set-wa-phone-id').value = state.settings.waPhoneNumberId || '';
-    if(document.getElementById('set-wa-recipient')) document.getElementById('set-wa-recipient').value = state.settings.waRecipientNumber || '';
     if(document.getElementById('set-wa-hmin')) document.getElementById('set-wa-hmin').value = state.settings.waHmin || 2;
     if(document.getElementById('set-h1-notif-enabled')) document.getElementById('set-h1-notif-enabled').checked = !!state.settings.h1NotifEnabled;
     if(document.getElementById('set-supabase-url')) document.getElementById('set-supabase-url').value = state.settings.supabaseUrl || '';
     if(document.getElementById('set-supabase-key')) document.getElementById('set-supabase-key').value = state.settings.supabaseKey || '';
 }
 
-function handleSaveWhatsappSettings(e) {
-    e.preventDefault();
-    state.settings.waAccessToken = document.getElementById('set-wa-token')?.value.trim() || '';
-    state.settings.waPhoneNumberId = document.getElementById('set-wa-phone-id')?.value.trim() || '';
-    state.settings.waRecipientNumber = document.getElementById('set-wa-recipient')?.value.trim() || '';
-    state.settings.waHmin = parseInt(document.getElementById('set-wa-hmin')?.value) || 2;
+// Dipanggil begitu dropdown H-min diganti — langsung simpan tanpa perlu tombol submit
+// terpisah, karena kartu WhatsApp (yang dulu punya tombol simpan sendiri) sudah dihapus.
+function handleChangeHmin(e) {
+    state.settings.waHmin = parseInt(e.target.value) || 2;
     saveState();
-    showToast('⚙️ Pengaturan WhatsApp disimpan!', 'success');
-    checkWhatsappDueReminder();
+    showToast('⚙️ Pengaturan pengingat disimpan!', 'success');
+    if (isNativeApp() && state.settings.h1NotifEnabled) scheduleNativeReminders();
 }
 
 function handleToggleH1Notif(e) {

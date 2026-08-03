@@ -185,7 +185,7 @@ function setupEventListeners() {
     document.getElementById('close-edit-tx-modal')?.addEventListener('click', () => document.getElementById('edit-tx-modal')?.classList.remove('open'));
 
     // Pengaturan: WhatsApp, Notifikasi H-1, Supabase
-    document.getElementById('form-settings-whatsapp')?.addEventListener('submit', handleSaveWhatsappSettings);
+    document.getElementById('set-wa-hmin')?.addEventListener('change', handleChangeHmin);
     document.getElementById('set-h1-notif-enabled')?.addEventListener('change', handleToggleH1Notif);
     document.getElementById('form-settings-supabase')?.addEventListener('submit', handleSaveSupabaseSettings);
     document.getElementById('btn-supabase-push')?.addEventListener('click', pushStateToSupabase);
@@ -410,6 +410,7 @@ function handleAddSale(e) {
                       `*Akun Pengirim:* ${acc.ign || acc.username}`;
                                
     sendWhatsappNotification(textNotif);
+    sendNativeInstantNotification('🛒 Pesanan Baru Masuk', `${buyerName} — ${starlightType} (Rp ${(priceSelling || 0).toLocaleString('id-ID')})`);
 }
 
 function renderLedger() {

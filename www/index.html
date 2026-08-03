@@ -213,40 +213,19 @@
                 </div>
 
                 <div class="premium-card">
-                    <div class="card-header-title">🔔 Notifikasi WhatsApp</div>
+                    <div class="card-header-title">📱 Notifikasi & Pengingat di HP</div>
                     <div class="invoice-divider"></div>
-                    <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Token &amp; Phone Number ID disimpan hanya di perangkat ini (localStorage). Ambil dari Meta Business Manager &gt; WhatsApp &gt; API Setup.</p>
-                    <form id="form-settings-whatsapp">
-                        <div class="form-group">
-                            <label>Access Token (WhatsApp Cloud API)</label>
-                            <input type="text" id="set-wa-token" placeholder="Contoh: EAAxxxxxxxxxxxx...">
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number ID</label>
-                            <input type="text" id="set-wa-phone-id" placeholder="Contoh: 123456789012345">
-                        </div>
-                        <div class="form-group">
-                            <label>Nomor Tujuan (nomor WA kamu, format 62xxx)</label>
-                            <input type="text" id="set-wa-recipient" placeholder="Contoh: 6281234567890">
-                        </div>
-                        <div class="form-group">
-                            <label>H- Pengingat Kirim ke WhatsApp</label>
-                            <select id="set-wa-hmin">
-                                <option value="1">H-1 (1 hari sebelum)</option>
-                                <option value="2" selected>H-2 (2 hari sebelum)</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn-premium-action">💾 SIMPAN PENGATURAN WHATSAPP</button>
-                    </form>
-                </div>
-
-                <div class="premium-card" style="margin-top:15px;">
-                    <div class="card-header-title">📱 Notifikasi H-1 di HP (Browser)</div>
-                    <div class="invoice-divider"></div>
-                    <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Menggunakan izin notifikasi browser yang sudah diminta aplikasi. Aktifkan agar Luna mengingatkan otomatis kalau ada pesanan jatuh tempo besok/hari ini, selama aplikasi terbuka.</p>
-                    <label style="display:flex; align-items:center; gap:8px; font-size:12px;">
-                        <input type="checkbox" id="set-h1-notif-enabled"> Aktifkan pengingat H-1 di HP
+                    <p style="font-size:11px; color:var(--text-muted); margin: 6px 0 10px;">Notifikasi muncul di status bar HP (tetap jalan walau aplikasi ditutup) untuk pesanan baru masuk, pengiriman sukses, dan pengingat H- sebelum jatuh tempo kirim.</p>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:12px; margin-bottom:10px;">
+                        <input type="checkbox" id="set-h1-notif-enabled"> Aktifkan pengingat jatuh tempo di HP
                     </label>
+                    <div class="form-group">
+                        <label>H- Pengingat Jatuh Tempo</label>
+                        <select id="set-wa-hmin">
+                            <option value="1">H-1 (1 hari sebelum)</option>
+                            <option value="2" selected>H-2 (2 hari sebelum)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="premium-card" style="margin-top:15px;">

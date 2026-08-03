@@ -130,13 +130,10 @@ function checkWhatsappDueReminder() {
         if (daysLeft <= hmin) {
             const flag = `${t.id}`;
             if (!notified[flag]) {
-                const textNotif = `*⏰ PENGINGAT H-${hmin} PENGIRIMAN!*\n\n` +
-                    `*Pembeli:* ${t.buyerName || '-'}\n` +
-                    `*Item:* ${t.starlightType || '-'}\n` +
-                    `*Estimasi Kirim:* ${t.estDeliveryDate}\n` +
-                    `*Status:* ${t.status}\n\n` +
-                    `Yuk siap-siap diproses biar ga kelewat jatuh tempo! 🌙`;
-                sendWhatsappNotification(textNotif);
+                sendNativeInstantNotification(
+                    `⏰ Pengingat H-${hmin} Pengiriman`,
+                    `${t.buyerName || '-'} — ${t.starlightType || '-'} (estimasi kirim: ${t.estDeliveryDate})`
+                );
                 notified[flag] = true;
             }
         }

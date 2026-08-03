@@ -44,7 +44,26 @@ async function cancelAllNativeReminders() {
     } catch (err) { console.error('Gagal membatalkan notifikasi native lama:', err); }
 }
 
-// Jadwalkan ulang semua notifikasi (pengiriman H-1/H-0) berdasarkan
+// Kirim SATU notifikasi native langsung/instan (bukan dijadwalkan ke masa depan
+// kayak reminder H-N) — dipakai buat event yang terjadi sekarang juga: pesanan
+// baru masuk, atau pengiriman sukses. ID-nya dibikin unik pakai timestamp biar
+// gak bentrok/ketimpa sama notifikasi reminder yang lain.
+async function sendNativeInstantNotification(title, body) {
+    const plugin = getLocalNotifPlugin();
+    if (!plugin) return;
+    const granted = await requestNativeNotifPermission();
+    if (!granted) return;
+    try {
+        await plugin.schedule({
+            notifications: [{
+                id: Math.floor(Date.now() % 2147483647),
+                title,
+                body,
+                schedule: { at: new Date(Date.now() + 1000) }
+            }]
+        });
+    } catch (err) { console.error('Gagal kirim notifikasi native instan:', err); }
+}
 // data transaksi & akun TERKINI. Dipanggil ulang tiap ada perubahan data (renderAll)
 // supaya jadwalnya selalu sinkron — notifikasi lama otomatis dibatalkan & diganti baru.
 async function scheduleNativeReminders() {
