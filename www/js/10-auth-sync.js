@@ -35,20 +35,27 @@ async function initAuthGate() {
     const client = getAuthClient();
     const form = document.getElementById('form-landing-login');
     const loadingEl = document.getElementById('landing-loading');
+
+    // Isi otomatis email & password dari login terakhir yang berhasil (kalau
+    // ada) -- sengaja TETAP nampilin form-nya (bukan langsung nyelonong masuk),
+    // biar user masih lihat "login sebagai siapa" dan tinggal tap tombol sekali,
+    // gak perlu ngetik ulang.
+    const savedEmail = localStorage.getItem('fl_saved_email');
+    const savedPassword = localStorage.getItem('fl_saved_password');
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    if (savedEmail && emailInput) emailInput.value = savedEmail;
+    if (savedPassword && passwordInput) passwordInput.value = savedPassword;
+
     if (!client) {
         // Supabase gagal dimuat (misal gak ada internet) -- daripada nge-block
         // total, tetap izinkan masuk pakai data lokal yang ada di HP.
         if (form) form.classList.add('hidden');
         return;
     }
-
-    const { data: { session } } = await client.auth.getSession();
-    if (session && session.user) {
-        currentAuthUser = { id: session.user.id, email: session.user.email };
-        await enterAppAfterLogin(loadingEl, form);
-    }
-    // Kalau gak ada sesi, form login yang sudah tampil dari HTML dibiarkan
-    // apa adanya, tinggal nunggu submit dari handleLoginSubmit().
+    // Sengaja TIDAK auto-masuk walau sesi tersimpan masih valid -- form dibiarkan
+    // tampil (sudah keisi otomatis di atas), tinggal nunggu user tap tombol
+    // "Masuk ke Toko", yang bakal diproses seperti biasa oleh handleLoginSubmit().
 }
 
 async function handleLoginSubmit(e) {
@@ -73,6 +80,11 @@ async function handleLoginSubmit(e) {
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '🚀 Masuk ke Toko'; }
         return;
     }
+
+    // Simpan biar form login lain kali (buka app lagi) sudah keisi otomatis --
+    // catatan: ini kesimpen apa adanya di localStorage HP, bukan dienkripsi.
+    localStorage.setItem('fl_saved_email', email);
+    localStorage.setItem('fl_saved_password', password);
 
     currentAuthUser = { id: data.user.id, email: data.user.email };
     await enterAppAfterLogin(loadingEl, form);
@@ -162,6 +174,8 @@ async function handleLogout() {
     const client = getAuthClient();
     if (client) { try { await client.auth.signOut(); } catch (err) { console.error(err); } }
     currentAuthUser = null;
+    localStorage.removeItem('fl_saved_email');
+    localStorage.removeItem('fl_saved_password');
     // Reload total biar semua state kebersih-in dan balik ke layar login dari nol.
     window.location.reload();
 }

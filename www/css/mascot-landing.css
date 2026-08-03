@@ -101,11 +101,12 @@
     justify-content: center;
     flex-direction: column;
     text-align: center;
-    padding: 20px;
+    padding: 14px;
     box-sizing: border-box;
     opacity: 1;
     visibility: visible;
     transition: opacity 0.45s ease, visibility 0.45s ease;
+    overflow-y: auto; /* jaga-jaga kalau di layar sangat pendek masih kurang muat, tetap bisa digeser */
 }
 .landing-page.hide {
     opacity: 0;
@@ -118,45 +119,50 @@
     align-items: center;
     max-width: min(90vw, 900px);
     width: 100%;
+    margin: auto; /* biar tetap center walau .landing-page jadi scrollable */
 }
+/* Catatan: ukuran-ukuran di bawah ini sengaja dibikin jauh lebih kecil dari versi
+   awal (yang didesain sebagai "cover screen" tanpa form) -- karena sekarang ada
+   form login di dalamnya, jadi total tingginya perlu ditekan biar tetap muat 1
+   layar HP tanpa perlu discroll. */
 .landing-logo {
-    width: clamp(100px, 15vw, 220px);
-    height: clamp(100px, 15vw, 220px);
+    width: clamp(64px, 11vw, 120px);
+    height: clamp(64px, 11vw, 120px);
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid var(--text-gold);
-    margin-bottom: 28px;
+    margin-bottom: 10px;
     box-shadow: 0 0 32px var(--accent-alpha);
 }
 .landing-title {
-    font-size: clamp(32px, 7vw, 72px);
-    letter-spacing: 3px;
+    font-size: clamp(20px, 5.5vw, 40px);
+    letter-spacing: 2px;
     color: var(--text-gold);
-    margin: 0 0 20px;
+    margin: 0 0 6px;
     font-weight: bold;
 }
 .landing-tagline {
-    font-size: clamp(16px, 3vw, 26px);
+    font-size: clamp(11px, 2.4vw, 15px);
     color: var(--text-muted);
-    margin: 0 0 48px;
-    line-height: 1.6;
+    margin: 0 0 12px;
+    line-height: 1.4;
     max-width: min(85vw, 680px);
 }
 .landing-maskot {
-    width: clamp(240px, 40vw, 440px);
-    height: clamp(240px, 40vw, 440px);
+    width: clamp(70px, 18vw, 130px);
+    height: clamp(70px, 18vw, 130px);
     object-fit: cover;
     border-radius: 50%;
     border: 4px solid var(--text-gold);
     box-shadow: 0 10px 34px rgba(0,0,0,0.5);
-    margin-bottom: 48px;
+    margin-bottom: 12px;
     animation: maskotBob 3s ease-in-out infinite;
 }
 .landing-btn {
     width: auto;
-    padding: clamp(20px, 2.2vw, 28px) clamp(48px, 8vw, 80px);
-    border-radius: 36px;
-    font-size: clamp(18px, 2.4vw, 24px);
+    padding: clamp(12px, 1.6vw, 18px) clamp(32px, 6vw, 56px);
+    border-radius: 30px;
+    font-size: clamp(15px, 2vw, 19px);
 }
 
 /* --- HOME: KARTU PILIHAN PRODUK --- */
