@@ -287,6 +287,7 @@
             <li class="menu-item active" data-target="dashboard">📊 Dashboard</li>
             <li class="menu-item" id="menu-item-input-penjualan" data-target="input-penjualan">📝 Input Penjualan</li>
             <li class="menu-item" id="menu-item-stok" data-target="stok">📦 Info Stok Akun</li>
+            <li class="menu-item" id="menu-item-klaim-wdp" data-target="klaim-wdp">🎁 Klaim WDP</li>
             <li class="menu-item" data-target="pembeli">👥 Info Pembeli</li>
             <li class="menu-item" data-target="rekap">📈 Rekap Jualan</li>
             <li class="menu-item" id="menu-item-pengeluaran" data-target="pengeluaran">💸 Pengeluaran & Laporan</li>
@@ -532,6 +533,16 @@
             <div id="account-premium-grid" class="premium-grid-layout"></div>
         </section>
 
+        <section id="page-klaim-wdp" class="spa-page">
+            <div class="section-header-box">
+                <h2>🎁 Klaim WDP Harian</h2>
+            </div>
+            <div class="premium-card" style="margin-bottom: 15px; padding: 12px 15px; font-size: 11px; color: var(--text-muted);">
+                1 WDP = 7 hari klaim (beli 2 WDP sekaligus = 14 hari, 3 WDP = 21 hari, dst). Jatah harian baru bisa diklaim (di game) mulai jam <b>16:00</b>. Ketuk titik hari yang sudah kebuka (⏰) buat nandain sudah diklaim (✅) — DM & modal akun ini bakal ikut nambah bertahap sesuai jatah hari itu.
+            </div>
+            <div id="klaim-wdp-list"></div>
+        </section>
+
         <section id="page-pembeli" class="spa-page">
             <div class="section-header-box">
                 <h2>👥 Antrean Antarmuka Pembeli</h2>
@@ -692,12 +703,12 @@
             <form id="form-wdp-purchase">
                 <input type="hidden" id="wdp-account-id">
                 <div class="form-row">
-                    <div class="form-group"><label>Jumlah WDP Dibeli</label><input type="number" id="wdp-count" min="1" value="1" required></div>
-                    <div class="form-group"><label>DM yang Didapat</label><input type="number" id="wdp-dm-received" min="1" placeholder="Contoh: 660" required></div>
+                    <div class="form-group"><label>Jumlah WDP Dibeli</label><input type="number" id="wdp-count" min="1" value="1" required oninput="updateWdpDmPreview()"></div>
+                    <div class="form-group"><label>Total DM (otomatis)</label><input type="text" id="wdp-dm-preview" value="220 DM" disabled style="opacity:0.7;"></div>
                 </div>
                 <div class="form-group"><label>Total Harga Beli (Rp)</label><input type="number" id="wdp-price" min="1" placeholder="Contoh: 75000" required></div>
                 <div class="form-group"><label>Tanggal Beli</label><input type="date" id="wdp-date" required></div>
-                <p style="font-size:10px; color:var(--text-muted);">Rata-rata modal per DM akun ini akan otomatis dihitung ulang (dicampur sama sisa stok DM lama), dan nominal ini otomatis tercatat sebagai Pengeluaran di Catatan Keuangan Gabungan.</p>
+                <p style="font-size:10px; color:var(--text-muted);">💎 Tiap 1 WDP = <b>220 DM</b> (80 DM langsung masuk otomatis pas beli + 20 DM/hari selama 7 hari lewat klaim manual di menu 🎁 Klaim WDP, hari pertama langsung bisa diklaim). Rata-rata modal akun ikut nambah bertahap sesuai porsi DM yang masuk. Nominal harga beli ini tetap langsung tercatat sebagai Pengeluaran di Catatan Keuangan Gabungan.</p>
                 <button type="submit" class="btn-premium-action" style="margin-top: 10px;">💾 SIMPAN PEMBELIAN</button>
             </form>
         </div>

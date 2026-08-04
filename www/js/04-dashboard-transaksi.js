@@ -271,6 +271,7 @@ function renderAll() {
     renderLedger();
     renderLogs();
     renderDashboard();
+    renderKlaimWdpPage();
     checkGlobalOverdueAlert();
     renderNotifBadge();
     scheduleNativeReminders();

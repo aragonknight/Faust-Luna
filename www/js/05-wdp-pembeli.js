@@ -3,6 +3,12 @@
 // (bagian dari script.js asli - FaustLuna Store)
 // ============================================================
 // --- PEMBELIAN WDP (MODAL STARLIGHT ML, PER AKUN) --- //
+// Total DM 1 pass WDP (fixed, sesuai jatah asli di game): 80 DM langsung masuk
+// otomatis pas beli + 20 DM/hari selama 7 hari via klaim manual = 220 DM.
+const WDP_INSTANT_DM_PER_UNIT = 80;
+const WDP_DAILY_CLAIM_DM = 20;
+const WDP_TOTAL_DM_PER_UNIT = WDP_INSTANT_DM_PER_UNIT + WDP_DAILY_CLAIM_DM * 7; // 220
+
 function openWdpModal(accountId) {
     const acc = state.accounts.find(a => a.id === accountId);
     if (!acc) return;
@@ -10,7 +16,16 @@ function openWdpModal(accountId) {
     document.getElementById('wdp-account-id').value = accountId;
     document.getElementById('wdp-account-label').textContent = `${acc.ign || acc.username} (Sisa DM saat ini: 💎 ${acc.diamond || 0}, rata-rata modal/DM: Rp ${Math.round(acc.avgDmCost || 0).toLocaleString('id-ID')})`;
     document.getElementById('wdp-date').value = new Date().toISOString().split('T')[0];
+    updateWdpDmPreview();
     document.getElementById('wdp-modal')?.classList.add('open');
+}
+
+// Update tampilan "Total DM (otomatis)" tiap "Jumlah WDP Dibeli" diubah.
+function updateWdpDmPreview() {
+    const el = document.getElementById('wdp-dm-preview');
+    if (!el) return;
+    const wdpCount = Math.max(1, parseInt(document.getElementById('wdp-count')?.value || 1));
+    el.value = `${wdpCount * WDP_TOTAL_DM_PER_UNIT} DM`;
 }
 
 function handleAddWdpPurchase(e) {
@@ -19,31 +34,46 @@ function handleAddWdpPurchase(e) {
     const acc = state.accounts.find(a => a.id === accountId);
     if (!acc) { showToast("❌ Akun tidak ditemukan!", "error"); return; }
 
-    const wdpCount = parseInt(document.getElementById('wdp-count')?.value || 0);
+    const wdpCount = Math.max(1, parseInt(document.getElementById('wdp-count')?.value || 0));
     const totalPrice = parseFloat(document.getElementById('wdp-price')?.value || 0);
-    const dmReceived = parseInt(document.getElementById('wdp-dm-received')?.value || 0);
     const date = document.getElementById('wdp-date')?.value || new Date().toISOString().split('T')[0];
-    if (dmReceived <= 0 || totalPrice <= 0) { showToast("❌ Isi jumlah DM & harga dengan benar!", "error"); return; }
+    if (totalPrice <= 0) { showToast("❌ Isi harga beli dengan benar!", "error"); return; }
 
-    // Rata-rata tertimbang (weighted average): stok DM lama yang tersisa di akun ini
-    // dicampur sama DM baru, modal/DM-nya jadi rata-rata baru. Jadi meski tiap bulan
-    // beli WDP beda jumlah/harga, modal per Starlight tetap kehitung akurat.
+    // DM total per pass WDP FIXED 220 (80 instan + 7×20 klaim harian), dikali
+    // jumlah WDP yang dibeli sekaligus — bukan input manual lagi, biar gak
+    // pernah salah ketik & selalu sinkron sama jatah asli di game.
+    const dmReceived = wdpCount * WDP_TOTAL_DM_PER_UNIT;
+    const costPerDm = totalPrice / dmReceived;
+
+    // Bagian "instan": 80 DM × jumlah WDP langsung masuk ke akun SEKARANG juga
+    // (gak perlu diklaim dulu), pakai rumus rata-rata tertimbang yang sama kayak
+    // pembelian DM biasa. Sisanya (7×20 DM per WDP) baru cair bertahap tiap
+    // ditandai klaim harian — lihat toggleWdpClaim() & getWdpDailyChunk().
+    const instantDm = wdpCount * WDP_INSTANT_DM_PER_UNIT;
+    const instantCost = instantDm * costPerDm;
     const oldStock = acc.diamond || 0;
     const oldAvgCost = acc.avgDmCost || 0;
     const oldValue = oldStock * oldAvgCost;
-    const newStock = oldStock + dmReceived;
-    const newAvgCost = newStock > 0 ? (oldValue + totalPrice) / newStock : 0;
-
+    const newStock = oldStock + instantDm;
+    const newValue = oldValue + instantCost;
     acc.diamond = newStock;
-    acc.avgDmCost = newAvgCost;
+    acc.avgDmCost = newStock > 0 ? newValue / newStock : 0;
 
     state.wdpPurchases.unshift({
         id: "wdp_" + Date.now(), accountId, accountName: acc.ign || acc.username,
-        wdpCount, totalPrice, dmReceived, date, avgCostAfter: newAvgCost
+        wdpCount, totalPrice, dmReceived, date, dmPending: true,
+        instantDm, instantCredited: true,
+        // Tracker klaim harian WDP: 1 WDP = 7 hari klaim @20 DM, jadi kalau beli
+        // beberapa WDP SEKALIGUS (wdpCount > 1) totalnya dikali (2 WDP = 14 hari
+        // klaim, dst). Array boolean sepanjang wdpCount*7, index 0 = hari pertama
+        // (tanggal beli, langsung bisa diklaim tanpa nunggu jam reset).
+        claims: Array(wdpCount * 7).fill(false)
     });
 
     // Auto-catat sebagai Pengeluaran di Catatan Keuangan Gabungan, biar Saldo/kas
-    // tetap akurat (uang beli WDP ini nyata-nyata keluar dari kantong).
+    // tetap akurat (uang beli WDP ini nyata-nyata keluar dari kantong) — ini tetap
+    // dicatat penuh langsung, karena uangnya emang beneran keluar pas beli, beda
+    // sama DM yang cairnya bertahap.
     state.homeExpenses.unshift({
         id: "hexp_auto_" + Date.now(),
         desc: `[Otomatis] Beli WDP — ${acc.ign || acc.username} (${wdpCount} WDP, ${dmReceived} DM)`,
@@ -55,7 +85,7 @@ function handleAddWdpPurchase(e) {
     saveState();
     document.getElementById('wdp-modal')?.classList.remove('open');
     renderAll(); renderHomeKeuangan();
-    showToast(`✅ Pembelian WDP dicatat! Rata-rata modal/DM sekarang: Rp ${Math.round(newAvgCost).toLocaleString('id-ID')}`, "success");
+    showToast(`✅ Pembelian WDP dicatat! 💎 +${instantDm} DM langsung masuk. Sisanya (${dmReceived - instantDm} DM) cair bertahap tiap kamu tandai klaim harian di menu 🎁 Klaim WDP.`, "success");
 }
 
 function renderWdpHistory(accountId) {
@@ -70,17 +100,202 @@ function renderWdpHistory(accountId) {
     if (purchases.length === 0) {
         listEl.innerHTML = maskotEmptyHTML('kosong', 'Belum ada riwayat pembelian WDP untuk akun ini.');
     } else {
-        listEl.innerHTML = purchases.map(p => `
+        listEl.innerHTML = purchases.map(p => {
+            // Purchase model baru (dmPending): DM cair bertahap tiap klaim, jadi
+            // ditampilin progress klaimnya, bukan "rata-rata modal setelah ini"
+            // (nilai itu gak relevan lagi karena modalnya nambah dikit-dikit).
+            // Purchase lama (belum ada dmPending): tetap tampilkan avgCostAfter asli.
+            const statusLine = p.dmPending
+                ? `${p.date} • 💎 ${p.instantDm || 0} DM instan${p.instantCredited ? ' (sudah masuk)' : ''} + ${(ensureWdpClaimsField(p).filter(c => c).length)}/${getWdpTotalDays(p)} hari klaim harian`
+                : `${p.date} • Rata-rata modal/DM setelah ini: Rp ${Math.round(p.avgCostAfter || 0).toLocaleString('id-ID')}`;
+            return `
             <div class="agenda-item" style="justify-content: space-between; align-items: center; display: flex; padding: 10px; border-bottom: 1px solid var(--accent-alpha);">
                 <div>
                     <div style="font-weight:bold; font-size: 13px;">${p.wdpCount} WDP → 💎 ${p.dmReceived} DM</div>
-                    <div style="font-size:10px; color:var(--text-muted);">${p.date} • Rata-rata modal/DM setelah ini: Rp ${Math.round(p.avgCostAfter || 0).toLocaleString('id-ID')}</div>
+                    <div style="font-size:10px; color:var(--text-muted);">${statusLine}</div>
                 </div>
                 <div style="color:var(--danger-red); font-weight:bold; font-size: 13px;">- Rp ${(p.totalPrice||0).toLocaleString('id-ID')}</div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
     modal.classList.add('open');
+}
+
+// --- KLAIM HARIAN WDP (WEEKLY DIAMOND PASS) --- //
+// 1 pass WDP aktif 7 hari sejak tanggal beli. Tiap hari jatahnya baru bisa
+// diklaim manual (di game) mulai jam 16:00 — kalau lupa, jatah hari itu bisa
+// hangus. Fitur ini murni pengingat/checklist, TIDAK memotong/menambah DM akun
+// (perhitungan modal DM tetap dari handleAddWdpPurchase di atas).
+const WDP_CLAIM_HOUR = 16; // jam 16:00 (4 sore)
+
+// 1 WDP = 7 hari klaim. Kalau beli beberapa WDP SEKALIGUS dalam satu pembelian,
+// totalnya dikali jumlah WDP-nya (2 WDP = 14 hari, 3 WDP = 21 hari, dst) — bukan
+// jalan paralel/numpuk di 7 hari yang sama.
+function getWdpTotalDays(purchase) {
+    return Math.max(1, parseInt(purchase.wdpCount) || 1) * 7;
+}
+
+function ensureWdpClaimsField(purchase) {
+    const totalDays = getWdpTotalDays(purchase);
+    if (!Array.isArray(purchase.claims) || purchase.claims.length !== totalDays) {
+        // Kalau sebelumnya udah ada progress klaim (array beda panjang, misal dari
+        // versi lama yang selalu 7), pertahankan status yang udah ke-centang sejauh
+        // index-nya masih pas, sisanya default belum diklaim.
+        const old = Array.isArray(purchase.claims) ? purchase.claims : [];
+        purchase.claims = Array.from({ length: totalDays }, (_, i) => !!old[i]);
+    }
+    return purchase.claims;
+}
+
+// Tanggal+jam "buka klaim" untuk tiap hari pass ini. Jatah HARI PERTAMA (index 0,
+// tanggal beli) LANGSUNG bisa diklaim begitu dibeli, gak perlu nunggu jam reset
+// (persis kayak di game: begitu beli, jatah hari-1 udah langsung kebuka). Hari
+// ke-2 dan seterusnya (termasuk siklus WDP kedua/ketiga kalau beli >1 sekaligus,
+// yang tetap disusun berurutan/tidak paralel) baru kebuka jam 16:00 di tanggal
+// masing-masing seperti biasa.
+function getWdpClaimUnlockDates(purchase) {
+    const base = new Date(`${purchase.date}T${String(WDP_CLAIM_HOUR).padStart(2, '0')}:00:00`);
+    const startOfDay = new Date(`${purchase.date}T00:00:00`);
+    const totalDays = getWdpTotalDays(purchase);
+    const dates = [];
+    for (let i = 0; i < totalDays; i++) {
+        if (i === 0) {
+            // Hari pertama pass ini — langsung terbuka dari awal hari beli.
+            dates.push(new Date(startOfDay));
+        } else {
+            const d = new Date(base);
+            d.setDate(d.getDate() + i);
+            dates.push(d);
+        }
+    }
+    return dates;
+}
+
+function getWdpClaimStatusList(purchase) {
+    const now = new Date();
+    const claims = ensureWdpClaimsField(purchase);
+    return getWdpClaimUnlockDates(purchase).map((unlockAt, dayIndex) => ({
+        dayIndex, unlockAt,
+        claimed: !!claims[dayIndex],
+        unlocked: now >= unlockAt
+    }));
+}
+
+// Jatah DM tiap hari klaim: FIXED 20 DM/hari (sesuai jatah asli WDP di game —
+// 80 DM-nya udah masuk otomatis pas beli, lihat handleAddWdpPurchase & instantDm).
+// Modal (Rupiah)-nya ikut proporsi: costPerDm = totalPrice / dmReceived (220 per
+// WDP), jadi total semua bagian (instan 80 + 7×20 klaim) dijumlah = persis
+// totalPrice aslinya, gak ada yang hilang/nambah.
+function getWdpDailyChunk(purchase, dayIndex) {
+    const dmReceived = purchase.dmReceived || (Math.max(1, parseInt(purchase.wdpCount) || 1) * WDP_TOTAL_DM_PER_UNIT);
+    const totalPrice = purchase.totalPrice || 0;
+    const costPerDm = dmReceived > 0 ? totalPrice / dmReceived : 0;
+    const dm = WDP_DAILY_CLAIM_DM;
+    const cost = dm * costPerDm;
+    return { dm, cost };
+}
+
+function isWdpPassFullyClaimed(purchase) {
+    return ensureWdpClaimsField(purchase).every(c => c === true);
+}
+
+// Pass yang masih ditampilkan di halaman Klaim WDP: yang masih ada jatah belum diklaim.
+function getActiveWdpPurchases() {
+    return state.wdpPurchases.filter(p => !isWdpPassFullyClaimed(p));
+}
+
+// Semua jatah klaim yang sudah "kebuka" (lewat jam 16:00 hari itu) tapi belum
+// dicentang diklaim — ini yang dipakai buat badge notif & notifikasi native.
+function getPendingWdpClaims() {
+    const pending = [];
+    state.wdpPurchases.forEach(p => {
+        getWdpClaimStatusList(p).forEach(s => {
+            if (s.unlocked && !s.claimed) pending.push({ purchase: p, ...s });
+        });
+    });
+    return pending;
+}
+
+function toggleWdpClaim(purchaseId, dayIndex) {
+    const p = state.wdpPurchases.find(w => w.id === purchaseId);
+    if (!p) return;
+    const claims = ensureWdpClaimsField(p);
+    const unlockDates = getWdpClaimUnlockDates(p);
+    if (new Date() < unlockDates[dayIndex]) {
+        showToast(`⏳ Belum waktunya, jatah hari ke-${dayIndex + 1} baru aktif jam ${WDP_CLAIM_HOUR}:00.`, "error");
+        return;
+    }
+    const willClaim = !claims[dayIndex];
+    claims[dayIndex] = willClaim;
+
+    // Purchase model baru (dmPending): jatah DM & modal hari ini baru dimasukkan
+    // (atau ditarik lagi kalau centangnya dilepas) ke akun sekarang, pakai rumus
+    // rata-rata tertimbang yang sama kayak pembelian WDP biasa — cuma dicicil per
+    // hari. Purchase lama (gak ada dmPending) dibiarkan seperti semula: DM-nya
+    // sudah kepotong penuh pas beli dulu, jadi centang di sini murni checklist,
+    // TIDAK ikut ubah DM lagi (biar gak dobel keitung).
+    let dmInfo = null;
+    if (p.dmPending) {
+        const acc = state.accounts.find(a => a.id === p.accountId);
+        if (acc) {
+            const chunk = getWdpDailyChunk(p, dayIndex);
+            dmInfo = chunk;
+            const sign = willClaim ? 1 : -1;
+            const oldStock = acc.diamond || 0;
+            const oldAvgCost = acc.avgDmCost || 0;
+            const oldValue = oldStock * oldAvgCost;
+            const newStock = Math.max(0, oldStock + sign * chunk.dm);
+            const newValue = Math.max(0, oldValue + sign * chunk.cost);
+            acc.diamond = newStock;
+            acc.avgDmCost = newStock > 0 ? newValue / newStock : 0;
+        }
+    }
+
+    saveState();
+    renderAll();
+    renderNotifDropdown();
+    if (willClaim) {
+        const dmText = dmInfo ? ` 💎 +${dmInfo.dm} DM masuk ke akun.` : '';
+        showToast(`✅ Klaim WDP hari ke-${dayIndex + 1} dicatat!${dmText}`, "success");
+    } else {
+        showToast("↩️ Ditandai belum diklaim lagi." + (dmInfo ? ` 💎 -${dmInfo.dm} DM ditarik dari akun.` : ''), "success");
+    }
+}
+
+function renderKlaimWdpPage() {
+    const container = document.getElementById('klaim-wdp-list');
+    if (!container) return;
+    const active = getActiveWdpPurchases();
+    if (active.length === 0) {
+        container.innerHTML = maskotEmptyHTML('kosong', 'Belum ada WDP aktif yang perlu diklaim. Beli WDP dulu lewat kartu akun di menu Info Stok Akun.');
+        return;
+    }
+    container.innerHTML = active.map(p => {
+        const acc = state.accounts.find(a => a.id === p.accountId);
+        const statuses = getWdpClaimStatusList(p);
+        const claimedCount = statuses.filter(s => s.claimed).length;
+        const dayDots = statuses.map(s => {
+            let cls = 'wdp-day-locked', label = s.dayIndex + 1;
+            const chunk = getWdpDailyChunk(p, s.dayIndex);
+            if (s.claimed) { cls = 'wdp-day-claimed'; label = '✅'; }
+            else if (s.unlocked) { cls = 'wdp-day-ready'; label = '⏰'; }
+            const title = `Hari ke-${s.dayIndex + 1} — buka ${s.unlockAt.toLocaleDateString('id-ID')} jam ${WDP_CLAIM_HOUR}:00 • 💎 ${chunk.dm} DM`;
+            return `<button type="button" class="wdp-day-dot ${cls}" title="${title}" onclick="toggleWdpClaim('${p.id}', ${s.dayIndex})">${label}</button>`;
+        }).join('');
+        const dmClaimedFromClaims = statuses.filter(s => s.claimed).reduce((sum, s) => sum + getWdpDailyChunk(p, s.dayIndex).dm, 0);
+        const dmMasukAkun = (p.instantCredited ? (p.instantDm || 0) : 0) + dmClaimedFromClaims;
+        return `
+            <div class="premium-card" style="margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <div class="card-header-title" style="font-size:13px;">${acc ? (acc.ign || acc.username) : 'Akun tidak ditemukan'}</div>
+                    <div style="font-size:11px; color:var(--text-muted);">${claimedCount}/${getWdpTotalDays(p)} diklaim</div>
+                </div>
+                <div style="font-size:10px; color:var(--text-muted); margin-bottom:10px;">Dibeli ${p.date} • ${p.wdpCount} WDP • 💎 ${dmMasukAkun}/${p.dmReceived} DM sudah masuk akun ${p.instantCredited ? `(termasuk ${p.instantDm} DM instan)` : ''}</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">${dayDots}</div>
+            </div>
+        `;
+    }).join('');
 }
 
 // --- CATAT HASIL GACHA (STOK BASIC/PREMIUM JALUR GACHA, PER AKUN) --- //

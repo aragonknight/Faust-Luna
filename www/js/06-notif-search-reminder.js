@@ -25,7 +25,8 @@ function renderNotifBadge() {
         return d <= 1;
     });
     const lowStock = getLowStockAccounts();
-    const total = dueSoon.length + lowStock.length;
+    const pendingWdp = getPendingWdpClaims();
+    const total = dueSoon.length + lowStock.length + pendingWdp.length;
 
     if (total > 0) {
         badge.textContent = total > 9 ? '9+' : total;
@@ -43,8 +44,13 @@ function renderNotifDropdown() {
         .filter(t => getDaysRemaining(t.estDeliveryDate) <= 1)
         .sort((a, b) => getDaysRemaining(a.estDeliveryDate) - getDaysRemaining(b.estDeliveryDate));
     const lowStock = getLowStockAccounts();
+    const pendingWdp = getPendingWdpClaims();
 
     let html = '';
+    pendingWdp.forEach(pw => {
+        const acc = state.accounts.find(a => a.id === pw.purchase.accountId);
+        html += `<div class="notif-item"><span class="notif-icon">🎁</span><span class="notif-text">WDP <b>${acc ? (acc.ign || acc.username) : '-'}</b> — Hari ke-${pw.dayIndex + 1}/${getWdpTotalDays(pw.purchase)} belum diklaim (aktif sejak jam ${WDP_CLAIM_HOUR}:00)</span></div>`;
+    });
     dueSoon.forEach(t => {
         const d = getDaysRemaining(t.estDeliveryDate);
         const label = d < 0 ? `Telat ${Math.abs(d)} hari` : (d === 0 ? 'Jatuh tempo hari ini' : 'Jatuh tempo besok');
@@ -167,8 +173,30 @@ function checkH1BrowserReminders() {
     localStorage.setItem(notifiedKey, JSON.stringify(notified));
 }
 
+// --- PENGINGAT OTOMATIS: KLAIM WDP HARIAN (JAM 16:00) --- //
+function checkWdpClaimReadyReminder() {
+    const notifiedKey = 'fl_wdp_notified';
+    const notified = safeParse(notifiedKey, {});
+
+    getPendingWdpClaims().forEach(pw => {
+        // Flag dikunci per pass+hari (bukan per tanggal kalender) supaya notif
+        // cuma dikirim SEKALI per jatah, walau app baru dibuka beberapa hari kemudian.
+        const flag = `${pw.purchase.id}_${pw.dayIndex}`;
+        if (!notified[flag]) {
+            const acc = state.accounts.find(a => a.id === pw.purchase.accountId);
+            sendNativeInstantNotification(
+                '🎁 WDP Siap Diklaim!',
+                `${acc ? (acc.ign || acc.username) : 'Akun'} — Hari ke-${pw.dayIndex + 1}/${getWdpTotalDays(pw.purchase)}, jangan lupa klaim sekarang.`
+            );
+            notified[flag] = true;
+        }
+    });
+    localStorage.setItem(notifiedKey, JSON.stringify(notified));
+}
+
 function runAllReminderChecks() {
     checkWhatsappDueReminder();
     checkH1BrowserReminders();
+    checkWdpClaimReadyReminder();
 }
 
