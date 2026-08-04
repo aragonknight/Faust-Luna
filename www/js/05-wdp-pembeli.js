@@ -59,9 +59,18 @@ function handleAddWdpPurchase(e) {
     acc.diamond = newStock;
     acc.avgDmCost = newStock > 0 ? newValue / newStock : 0;
 
+    // purchasedAt = jam beli yang sebenarnya, dipakai buat nentuin reset 16:00
+    // pertama (lihat getWdpClaimUnlockDates). Kalau tanggal yang diisi di form
+    // BEDA dari hari ini (misal lagi input data lawas/backfill), jam aslinya gak
+    // diketahui — dianggap dibeli jam 00:00 di tanggal itu (asumsi paling aman:
+    // sebelum jam 16:00, jadi hari ke-2 kebuka 16:00 di tanggal yang sama).
+    const todayStr = new Date().toISOString().split('T')[0];
+    const purchasedAt = (date === todayStr) ? new Date().toISOString() : `${date}T00:00:00`;
+
     state.wdpPurchases.unshift({
         id: "wdp_" + Date.now(), accountId, accountName: acc.ign || acc.username,
         wdpCount, totalPrice, dmReceived, date, dmPending: true,
+        purchasedAt,
         instantDm, instantCredited: true,
         // Tracker klaim harian WDP: 1 WDP = 7 hari klaim @20 DM, jadi kalau beli
         // beberapa WDP SEKALIGUS (wdpCount > 1) totalnya dikali (2 WDP = 14 hari
@@ -148,28 +157,40 @@ function ensureWdpClaimsField(purchase) {
     return purchase.claims;
 }
 
-// Tanggal+jam "buka klaim" untuk tiap hari pass ini. Jatah HARI PERTAMA (index 0,
-// tanggal beli) LANGSUNG bisa diklaim begitu dibeli, gak perlu nunggu jam reset
-// (persis kayak di game: begitu beli, jatah hari-1 udah langsung kebuka). Hari
-// ke-2 dan seterusnya (termasuk siklus WDP kedua/ketiga kalau beli >1 sekaligus,
-// yang tetap disusun berurutan/tidak paralel) baru kebuka jam 16:00 di tanggal
-// masing-masing seperti biasa.
+// Tanggal+jam "buka klaim" untuk tiap hari pass ini — ngikutin jam reset asli di
+// game (16:00 tiap hari), BUKAN "24 jam dari waktu beli". Jatah HARI PERTAMA
+// (index 0) LANGSUNG bisa diklaim begitu dibeli, jam berapa pun. Jatah hari
+// ke-2 dst kebuka di reset 16:00 BERIKUTNYA setelah waktu beli — jadi kalau beli
+// sebelum jam 16:00, hari ke-2 udah kebuka jam 16:00 di HARI YANG SAMA; kalau
+// beli setelah jam 16:00, hari ke-2 baru kebuka jam 16:00 besoknya. Tiap hari
+// setelahnya tinggal +1 hari dari titik itu.
 function getWdpClaimUnlockDates(purchase) {
-    const base = new Date(`${purchase.date}T${String(WDP_CLAIM_HOUR).padStart(2, '0')}:00:00`);
-    const startOfDay = new Date(`${purchase.date}T00:00:00`);
+    // purchasedAt = waktu submit form yang sebenarnya (buat nentuin reset 16:00
+    // pertama yang relevan). Data lama yang belum punya field ini dianggap
+    // dibeli jam 00:00 di tanggal `date`-nya (paling aman: anggap sebelum jam 16:00).
+    const purchasedAt = purchase.purchasedAt ? new Date(purchase.purchasedAt) : new Date(`${purchase.date}T00:00:00`);
     const totalDays = getWdpTotalDays(purchase);
     const dates = [];
+
+    // Cari reset 16:00 pertama SETELAH waktu beli.
+    const firstReset = new Date(purchasedAt);
+    firstReset.setHours(WDP_CLAIM_HOUR, 0, 0, 0);
+    if (purchasedAt.getHours() >= WDP_CLAIM_HOUR) {
+        firstReset.setDate(firstReset.getDate() + 1);
+    }
+
     for (let i = 0; i < totalDays; i++) {
         if (i === 0) {
-            // Hari pertama pass ini — langsung terbuka dari awal hari beli.
-            dates.push(new Date(startOfDay));
+            // Hari pertama pass ini — langsung terbuka begitu dibeli.
+            dates.push(new Date(purchasedAt));
         } else {
-            const d = new Date(base);
-            d.setDate(d.getDate() + i);
+            const d = new Date(firstReset);
+            d.setDate(d.getDate() + (i - 1));
             dates.push(d);
         }
     }
     return dates;
+
 }
 
 function getWdpClaimStatusList(purchase) {
@@ -223,7 +244,8 @@ function toggleWdpClaim(purchaseId, dayIndex) {
     const claims = ensureWdpClaimsField(p);
     const unlockDates = getWdpClaimUnlockDates(p);
     if (new Date() < unlockDates[dayIndex]) {
-        showToast(`⏳ Belum waktunya, jatah hari ke-${dayIndex + 1} baru aktif jam ${WDP_CLAIM_HOUR}:00.`, "error");
+        const unlockLabel = unlockDates[dayIndex].toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        showToast(`⏳ Belum waktunya, jatah hari ke-${dayIndex + 1} baru aktif ${unlockLabel} jam ${WDP_CLAIM_HOUR}:00.`, "error");
         return;
     }
     const willClaim = !claims[dayIndex];
