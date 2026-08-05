@@ -51,6 +51,12 @@ function renderPengeluaran() {
         totalProfitKotor += (parseFloat(t.netProfit) || 0);
     });
 
+    // Tambahin transaksi selesai yang UDAH DIHAPUS tapi diarsipkan (lihat
+    // state.archivedTx) — angkanya tetap kehitung walau kartunya udah gak ada.
+    const archived = getArchivedTotals(currentProduct);
+    totalPemasukan += archived.omset;
+    totalProfitKotor += archived.profit;
+
     const totalPengeluaran = myExpenses.reduce((sum, p) => sum + (p.amount || 0), 0);
     const keuntunganBersih = totalProfitKotor - totalPengeluaran;
 
@@ -112,6 +118,9 @@ function renderHomeCombinedSummary() {
             profit += (parseFloat(t.netProfit) || 0);
         });
         grandOmset += omset; grandProfit += profit;
+        const archived = getArchivedTotals(key);
+        omset += archived.omset; profit += archived.profit;
+        grandOmset += archived.omset; grandProfit += archived.profit;
         return `
             <div class="premium-row">
                 <span class="lbl">${cfg.icon} ${cfg.label}</span>
@@ -147,7 +156,7 @@ function renderHomeKeuangan() {
         }
     }
 
-    const autoPemasukan = state.transactions.reduce((sum, t) => sum + ((parseFloat(t.priceSelling) || 0) - (parseFloat(t.priceDiscount) || 0)), 0);
+    const autoPemasukan = state.transactions.reduce((sum, t) => sum + ((parseFloat(t.priceSelling) || 0) - (parseFloat(t.priceDiscount) || 0)), 0) + getArchivedTotals().omset;
     const totalPengeluaran = state.homeExpenses.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
     const totalPemasukan = autoPemasukan + (state.financeAdjustment.pemasukan || 0);
     const saldo = (totalPemasukan - totalPengeluaran) + (state.financeAdjustment.saldo || 0);

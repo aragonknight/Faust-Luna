@@ -39,13 +39,19 @@ let state = {
     // Riwayat pembelian WDP per akun. Dipakai untuk hitung rata-rata modal per DM
     // (weighted average cost) tiap akun, karena stok DM lama & baru bisa kecampur
     // dengan harga beli yang beda-beda tiap bulan.
-    wdpPurchases: safeParse('fl_wdp_purchases', []),
-    // Riwayat catat hasil gacha (stok Basic/Premium jalur "Gacha", terpisah dari stok
+    wdpPurchases: safeParse('fl_wdp_purchases', []),    // Riwayat catat hasil gacha (stok Basic/Premium jalur "Gacha", terpisah dari stok
     // "Biasa"). DM yang abis pas gacha dicatat riil di sini (bukan pakai konversi fixed
     // 300/750), jadi modal per item gacha dihitung dari DM riil x rata-rata modal/DM akun,
     // dan langsung motong acc.diamond saat itu juga (bukan nunggu pas dijual).
     gachaLogs: safeParse('fl_gacha_logs', []),
     trash: safeParse('fl_trash', []),
+    // Arsip permanen omset/modal/profit dari transaksi yang statusnya SUDAH
+    // "Sudah Dikirim" pas dihapus/dipindah ke Kotak Sampah. Uangnya kan udah
+    // beneran cair, jadi angkanya tetap kehitung di semua laporan (Pemasukan,
+    // Omset, Rekap Pembukuan) SELAMANYA — gak ke-reset walau kotak sampah
+    // dikosongin. Kalau transaksinya dipulihkan lagi dari sampah, entri arsip
+    // ini dihapus (biar gak dobel hitung, karena udah aktif lagi di transactions).
+    archivedTx: safeParse('fl_archived_tx', []),
     theme: localStorage.getItem('fl_theme') || 'faust-gold',
     privacyMode: safeParse('fl_privacy', false),
     logs: safeParse('fl_logs', []),
@@ -171,6 +177,18 @@ function productTx() {
 }
 function productPengeluaran() {
     return state.pengeluaran.filter(p => (p.product || 'mobileleg') === currentProduct);
+}
+
+// Total omset/modal/profit dari transaksi yang SUDAH DIHAPUS tapi berstatus
+// "Sudah Dikirim" pas dihapus — lihat komentar di state.archivedTx (01-config.js)
+// & moveTxToTrash() (05-wdp-pembeli.js). Kalau productKey dikosongin, jumlahin
+// semua produk (dipakai di renderHomeKeuangan yang gak per-produk).
+function getArchivedTotals(productKey) {
+    const list = productKey ? state.archivedTx.filter(a => a.productKey === productKey) : state.archivedTx;
+    return list.reduce((acc, a) => {
+        acc.omset += a.omset || 0; acc.modal += a.modal || 0; acc.profit += a.profit || 0;
+        return acc;
+    }, { omset: 0, modal: 0, profit: 0 });
 }
 
 // Tab aktif buat filter varian Biasa/Gacha di form input penjualan (cuma relevan

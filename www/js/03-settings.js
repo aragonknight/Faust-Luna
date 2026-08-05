@@ -86,7 +86,7 @@ async function pushStateToSupabase() {
     if (!client) { showToast('❌ Isi dulu Project URL & Anon Key Supabase di atas.', 'error'); return; }
 
     const payload = {
-        transactions: state.transactions, accounts: state.accounts, trash: state.trash,
+        transactions: state.transactions, accounts: state.accounts, trash: state.trash, archivedTx: state.archivedTx,
         theme: state.theme, ledger: state.ledger, pengeluaran: state.pengeluaran,
         homeExpenses: state.homeExpenses, capitalPrices: state.capitalPrices,
         wdpPurchases: state.wdpPurchases, gachaLogs: state.gachaLogs, logs: state.logs,
@@ -127,6 +127,7 @@ async function pullStateFromSupabase() {
             state.transactions = cloud.transactions || [];
             state.accounts = cloud.accounts || [];
             state.trash = cloud.trash || [];
+            state.archivedTx = cloud.archivedTx || [];
             state.ledger = cloud.ledger || [];
             state.pengeluaran = cloud.pengeluaran || [];
             state.homeExpenses = cloud.homeExpenses || [];

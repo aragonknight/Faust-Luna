@@ -298,6 +298,7 @@ function saveStateLocal() {
     localStorage.setItem('fl_transactions', JSON.stringify(state.transactions));
     localStorage.setItem('fl_accounts', JSON.stringify(state.accounts));
     localStorage.setItem('fl_trash', JSON.stringify(state.trash));
+    localStorage.setItem('fl_archived_tx', JSON.stringify(state.archivedTx));
     localStorage.setItem('fl_logs', JSON.stringify(state.logs));
     localStorage.setItem('fl_ledger', JSON.stringify(state.ledger));
     localStorage.setItem('fl_wdp_purchases', JSON.stringify(state.wdpPurchases));

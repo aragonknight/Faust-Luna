@@ -140,6 +140,7 @@ function setupEventListeners() {
             scope.querySelectorAll('.spa-page').forEach(page => page.classList.remove('active'));
             scope.querySelector(`#page-${target}`)?.classList.add('active');
             if (target === 'home-keuangan') renderHomeKeuangan();
+            if (target === 'pengeluaran') renderPengeluaran();
             document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
             document.querySelectorAll('.sidebar-overlay').forEach(o => o.classList.remove('show'));
         });
@@ -272,6 +273,7 @@ function renderAll() {
     renderLogs();
     renderDashboard();
     renderKlaimWdpPage();
+    renderPengeluaran();
     checkGlobalOverdueAlert();
     renderNotifBadge();
     scheduleNativeReminders();

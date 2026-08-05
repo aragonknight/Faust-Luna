@@ -754,9 +754,9 @@ function renderRekapPage() {
         container.appendChild(card);
     });
     
-    if(document.getElementById('stat-omset')) document.getElementById('stat-omset').textContent = `Rp ${(omset || 0).toLocaleString('id-ID')}`;
-    if(document.getElementById('stat-modal')) document.getElementById('stat-modal').textContent = `Rp ${(modal || 0).toLocaleString('id-ID')}`;
-    if(document.getElementById('stat-profit')) document.getElementById('stat-profit').textContent = `Rp ${(profit || 0).toLocaleString('id-ID')}`;
+    if(document.getElementById('stat-omset')) document.getElementById('stat-omset').textContent = `Rp ${((omset + getArchivedTotals(currentProduct).omset) || 0).toLocaleString('id-ID')}`;
+    if(document.getElementById('stat-modal')) document.getElementById('stat-modal').textContent = `Rp ${((modal + getArchivedTotals(currentProduct).modal) || 0).toLocaleString('id-ID')}`;
+    if(document.getElementById('stat-profit')) document.getElementById('stat-profit').textContent = `Rp ${((profit + getArchivedTotals(currentProduct).profit) || 0).toLocaleString('id-ID')}`;
     initPrivacy();
 }
 
@@ -764,6 +764,21 @@ function moveTxToTrash(id) {
     showConfirm("Pindahkan transaksi ini ke kotak sampah?", () => {
         const idx = state.transactions.findIndex(t => t.id === id);
         const item = state.transactions.splice(idx, 1)[0];
+
+        // Kalau statusnya udah "Sudah Dikirim" pas dihapus, duitnya kan udah
+        // beneran cair — arsipin omset/modal/profit-nya PERMANEN ke
+        // state.archivedTx biar Pemasukan/Omset/Rekap Pembukuan gak ikut turun,
+        // walau kartunya udah gak ada / kotak sampah dikosongin nanti.
+        if (item.status === 'Sudah Dikirim') {
+            state.archivedTx.push({
+                id: item.id,
+                productKey: TYPE_TO_PRODUCT[item.starlightType] || currentProduct,
+                omset: (parseFloat(item.priceSelling) || 0) - (parseFloat(item.priceDiscount) || 0),
+                modal: parseFloat(item.priceCapital) || 0,
+                profit: parseFloat(item.netProfit) || 0
+            });
+        }
+
         state.trash.push({ id: "trash_" + Date.now(), type: "Transaksi", meta: `Pembeli: ${item.buyerName || '-'} | ${item.starlightType || '-'}`, rawData: item });
         saveState(); renderAll(); buildCRMList(); showToast("🗑️ ...Terbuang ke Kotak Sampah", "success");
     });
@@ -787,7 +802,12 @@ function renderTrashBin() {
 
 function restoreTrash(id) {
     const idx = state.trash.findIndex(t => t.id === id);
-    state.transactions.push(state.trash.splice(idx, 1)[0].rawData);
+    const restored = state.trash.splice(idx, 1)[0].rawData;
+    state.transactions.push(restored);
+    // Kalau transaksi ini sebelumnya sempat diarsipkan (lihat moveTxToTrash),
+    // hapus dulu entri arsipnya — sekarang udah aktif lagi di transactions,
+    // jadi bakal kehitung dari situ. Kalau gak dihapus, nanti dobel kehitung.
+    state.archivedTx = state.archivedTx.filter(a => a.id !== restored.id);
     saveState(); renderAll(); buildCRMList(); showToast("♻️ Data berhasil dipulihkan!", "success");
 }
 
