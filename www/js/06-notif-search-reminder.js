@@ -27,7 +27,8 @@ function renderNotifBadge() {
     const lowStock = getLowStockAccounts();
     const pendingWdp = getPendingWdpClaims();
     const debts = getAllOutstandingDebts();
-    const total = dueSoon.length + lowStock.length + pendingWdp.length + debts.length;
+    const urgentEvents = (typeof getMendesakCalendarEvents === 'function') ? getMendesakCalendarEvents() : [];
+    const total = dueSoon.length + lowStock.length + pendingWdp.length + debts.length + urgentEvents.length;
 
     if (total > 0) {
         badge.textContent = total > 9 ? '9+' : total;
@@ -47,8 +48,12 @@ function renderNotifDropdown() {
     const lowStock = getLowStockAccounts();
     const pendingWdp = getPendingWdpClaims();
     const debts = getAllOutstandingDebts();
+    const urgentEvents = (typeof getMendesakCalendarEvents === 'function') ? getMendesakCalendarEvents() : [];
 
     let html = '';
+    urgentEvents.forEach(ev => {
+        html += `<div class="notif-item"><span class="notif-icon">📅</span><span class="notif-text">Jadwal <b>${ev.title}</b> — ${new Date(ev.date).toLocaleDateString('id-ID', {day:'numeric', month:'short'})}</span></div>`;
+    });
     debts.forEach(t => {
         html += `<div class="notif-item"><span class="notif-icon">🔴</span><span class="notif-text">Hutang <b>${t.buyerName || 'Tanpa Nama'}</b> — Rp ${getTxOutstandingDebt(t).toLocaleString('id-ID')}</span></div>`;
     });

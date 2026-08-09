@@ -1,0 +1,136 @@
+/* ============================================================
+   FITUR BARU: Dashboard Kesehatan Toko, Luna Assistant,
+   Kalender Operasional, Riwayat Aktivitas, Statistik Akun ML
+   ============================================================ */
+
+/* --- Kesehatan Toko: grid kartu metrik --- */
+.health-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+.health-metric-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--accent-alpha, rgba(255,255,255,0.08));
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.health-metric-card .hm-icon { font-size: 16px; }
+.health-metric-card .hm-label { font-size: 10px; color: var(--text-muted); }
+.health-metric-card .hm-value { font-size: 15px; font-weight: bold; color: var(--text-gold); }
+.health-metric-card.hm-warn { border-color: #ff6b6b; background: rgba(231,76,60,0.08); }
+.health-metric-card.hm-warn .hm-value { color: #ff6b6b; }
+.health-metric-card.hm-ok { border-color: var(--success-green, #2ecc71); background: rgba(46,204,113,0.08); }
+.health-metric-card.hm-ok .hm-value { color: var(--success-green, #2ecc71); }
+
+.health-compare-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+.health-compare-box {
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+}
+.health-compare-box .lbl { display:block; font-size: 9px; color: var(--text-muted); margin-bottom: 3px; }
+.health-compare-box .val { display:block; font-size: 12px; font-weight: bold; color: #fff; }
+
+/* --- Grafik penjualan 7 hari (bar chart CSS murni) --- */
+.mini-chart-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 90px;
+    margin-top: 12px;
+    padding-top: 6px;
+}
+.mini-chart-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    gap: 4px;
+}
+.mini-chart-bar {
+    width: 100%;
+    max-width: 22px;
+    background: linear-gradient(180deg, var(--text-gold), rgba(255,215,110,0.35));
+    border-radius: 4px 4px 0 0;
+    min-height: 3px;
+    transition: height 0.3s ease;
+}
+.mini-chart-bar-label {
+    font-size: 8px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* --- Luna Assistant panel --- */
+.luna-panel {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+.luna-panel img {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--text-gold); flex-shrink: 0;
+}
+.luna-panel-messages { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.luna-msg-bubble {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--accent-alpha, rgba(255,255,255,0.08));
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.luna-msg-bubble.luna-msg-warn { border-color: #ff6b6b; color: #ffb3b3; }
+.luna-msg-bubble.luna-msg-good { border-color: var(--success-green, #2ecc71); color: #b6f4cf; }
+
+/* --- Riwayat Aktivitas terstruktur --- */
+.activity-filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.activity-filter-btn {
+    padding: 5px 10px; border-radius: 20px; border: 1px solid var(--accent-alpha, rgba(255,255,255,0.1));
+    background: rgba(255,255,255,0.04); color: var(--text-muted); font-size: 10px; font-weight: bold; cursor: pointer;
+}
+.activity-filter-btn.active { background: var(--text-gold); color: #000; border-color: var(--text-gold); }
+.activity-item {
+    display: flex; gap: 10px; padding: 9px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px;
+}
+.activity-item .act-icon { font-size: 15px; flex-shrink: 0; }
+.activity-item .act-body { flex: 1; }
+.activity-item .act-msg { color: #fff; }
+.activity-item .act-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* --- Kalender Operasional --- */
+.calendar-status-badge {
+    font-size: 9px; font-weight: bold; padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+}
+.calendar-status-badge.status-mendesak { background: rgba(231,76,60,0.15); color: #ff6b6b; }
+.calendar-status-badge.status-akan-datang { background: rgba(241,196,15,0.15); color: #f1c40f; }
+.calendar-status-badge.status-selesai { background: rgba(46,204,113,0.15); color: var(--success-green, #2ecc71); }
+.calendar-event-item {
+    padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px;
+}
+.calendar-event-item .cal-top-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.calendar-event-item .cal-title { font-weight: bold; font-size: 13px; }
+.calendar-event-item .cal-meta { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+.calendar-event-item .cal-notes { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+.calendar-event-item .cal-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+/* --- Statistik Akun ML --- */
+.account-status-pill { font-size: 9px; font-weight: bold; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+.account-status-pill.st-aktif { background: rgba(46,204,113,0.15); color: var(--success-green, #2ecc71); }
+.account-status-pill.st-hampir { background: rgba(241,196,15,0.15); color: #f1c40f; }
+.account-status-pill.st-limit { background: rgba(231,76,60,0.15); color: #ff6b6b; }
+.account-status-pill.st-nonaktif { background: rgba(255,255,255,0.08); color: var(--text-muted); }

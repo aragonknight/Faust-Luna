@@ -124,6 +124,7 @@ function goHome() {
     document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
     document.querySelectorAll('.sidebar-overlay').forEach(o => o.classList.remove('show'));
     renderHomeKeuangan();
+    if (typeof renderLunaFeatures === 'function') renderLunaFeatures();
 }
 
 // --- SISTEM MASKOT LUNA ---
@@ -301,6 +302,8 @@ function saveStateLocal() {
     localStorage.setItem('fl_trash', JSON.stringify(state.trash));
     localStorage.setItem('fl_archived_tx', JSON.stringify(state.archivedTx));
     localStorage.setItem('fl_logs', JSON.stringify(state.logs));
+    localStorage.setItem('fl_activity_log', JSON.stringify(state.activityLog));
+    localStorage.setItem('fl_calendar_events', JSON.stringify(state.calendarEvents));
     localStorage.setItem('fl_ledger', JSON.stringify(state.ledger));
     localStorage.setItem('fl_wdp_purchases', JSON.stringify(state.wdpPurchases));
     localStorage.setItem('fl_pengeluaran', JSON.stringify(state.pengeluaran));

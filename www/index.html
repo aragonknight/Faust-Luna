@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/navbar-widgets.css">
     <link rel="stylesheet" href="css/layout-components.css">
     <link rel="stylesheet" href="css/mascot-landing.css">
+    <link rel="stylesheet" href="css/luna-features.css">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
     <link rel="apple-touch-icon" href="./icons/icon-512.png">
@@ -86,7 +87,8 @@
                 <li class="menu-item active" data-target="home-dashboard">📊 Dashboard</li>
                 <li class="menu-item" data-target="home-keuangan">💰 Catatan Keuangan</li>
                 <li class="menu-item" data-target="home-ledger">🧾 Mutasi E-Wallet</li>
-                <li class="menu-item" data-target="home-logs">📜 Log Aktivitas</li>
+                <li class="menu-item" data-target="home-kalender">📅 Kalender Operasional</li>
+                <li class="menu-item" data-target="home-logs">📜 Riwayat Aktivitas</li>
                 <li class="menu-item" data-target="home-pengaturan">⚙️ Pengaturan</li>
             </ul>
             <div class="sidebar-footer">
@@ -110,6 +112,24 @@
                         <div style="font-size:11px; color:var(--text-muted);">Pilih layanan yang mau kamu kelola di bawah ini.</div>
                     </div>
                 </div>
+
+                <!-- 🌙 LUNA ASSISTANT: komentar & reaksi Luna terhadap kondisi toko -->
+                <div class="premium-card" style="margin-bottom:15px;">
+                    <div class="card-header-title">🌙 Luna Assistant</div>
+                    <div class="invoice-divider"></div>
+                    <div id="luna-assistant-panel" class="luna-panel"></div>
+                </div>
+
+                <!-- 📊 DASHBOARD KESEHATAN TOKO -->
+                <div class="premium-card" style="margin-bottom:15px;">
+                    <div class="card-header-title">📊 Kesehatan Toko Hari Ini</div>
+                    <div class="invoice-divider"></div>
+                    <div id="health-grid" class="health-grid"></div>
+                    <div id="health-compare-row" class="health-compare-row"></div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:12px;">📈 Grafik omset 7 hari terakhir</div>
+                    <div id="health-sales-chart" class="mini-chart-wrap"></div>
+                </div>
+
                 <div class="product-card-grid">
                     <div class="product-card" data-product="mobileleg">
                         <div class="product-card-icon">✨</div>
@@ -215,12 +235,46 @@
                 </div>
             </section>
 
+            <section id="page-home-kalender" class="spa-page">
+                <div class="section-header-box">
+                    <h2>📅 Kalender Operasional</h2>
+                    <button id="btn-add-calendar-event" class="btn-add-new">+ Tambah Jadwal</button>
+                </div>
+                <div class="premium-card" style="margin-bottom:12px;">
+                    <div class="activity-filter-row">
+                        <button type="button" class="activity-filter-btn cal-filter-btn active" data-cfilter="semua">Semua</button>
+                        <button type="button" class="activity-filter-btn cal-filter-btn" data-cfilter="mendesak">🔴 Mendesak</button>
+                        <button type="button" class="activity-filter-btn cal-filter-btn" data-cfilter="akan-datang">🟡 Akan Datang</button>
+                        <button type="button" class="activity-filter-btn cal-filter-btn" data-cfilter="selesai">🟢 Selesai</button>
+                    </div>
+                </div>
+                <div id="calendar-event-list"></div>
+            </section>
+
             <section id="page-home-logs" class="spa-page">
                 <div class="section-header-box">
-                    <h2>📜 Log Riwayat Aktivitas Sistem</h2>
-                    <button id="btn-clear-logs" class="btn-danger-clean">Bersihkan Log</button>
+                    <h2>📜 Riwayat Aktivitas</h2>
+                    <button id="btn-clear-activity-log" class="btn-danger-clean">Bersihkan Riwayat</button>
                 </div>
-                <div class="premium-card" style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 11px; line-height: 1.6;" id="log-console-area"></div>
+                <div class="premium-card" style="margin-bottom:12px;">
+                    <div class="activity-filter-row">
+                        <button type="button" class="activity-filter-btn" data-atype="semua">Semua</button>
+                        <button type="button" class="activity-filter-btn" data-atype="transaksi">🧾 Transaksi</button>
+                        <button type="button" class="activity-filter-btn" data-atype="pembayaran">💰 Pembayaran</button>
+                        <button type="button" class="activity-filter-btn" data-atype="wdp">🎁 WDP</button>
+                        <button type="button" class="activity-filter-btn" data-atype="akun">🛡️ Akun</button>
+                        <button type="button" class="activity-filter-btn" data-atype="hapus">🗑️ Hapus</button>
+                        <button type="button" class="activity-filter-btn" data-atype="kalender">📅 Kalender</button>
+                        <button type="button" class="activity-filter-btn" data-atype="sync">☁️ Sinkronisasi</button>
+                        <button type="button" class="activity-filter-btn" data-atype="login">🔑 Login/Logout</button>
+                    </div>
+                </div>
+                <div class="premium-card" style="max-height: 480px; overflow-y: auto;" id="activity-log-list"></div>
+
+                <details style="margin-top:12px;">
+                    <summary style="font-size:11px; color:var(--text-muted); cursor:pointer;">Log mentah (debug)</summary>
+                    <div class="premium-card" style="max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 10px; line-height: 1.6; margin-top:8px;" id="log-console-area"></div>
+                </details>
             </section>
 
             <section id="page-home-pengaturan" class="spa-page">
@@ -820,6 +874,41 @@
         </div>
     </div>
 
+    <div id="calendar-event-modal" class="modal">
+        <div class="modal-content invoice-card-box" style="border-style: solid;">
+            <span class="close-modal" id="btn-close-calendar-modal">&times;</span>
+            <div class="invoice-header-title" id="calendar-modal-title" style="font-size: 17px;">➕ TAMBAH JADWAL BARU</div>
+            <div class="invoice-divider"></div>
+            <form id="form-calendar-event">
+                <input type="hidden" id="cal-event-id">
+                <div class="form-group"><label>Judul Jadwal</label><input type="text" id="cal-title" placeholder="Contoh: Gift Starlight ke Budi" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Tanggal</label><input type="date" id="cal-date" required></div>
+                    <div class="form-group"><label>Kategori</label>
+                        <select id="cal-category">
+                            <option value="gift">🎁 Jadwal Gift Starlight</option>
+                            <option value="kirim">📦 Jadwal Pengiriman</option>
+                            <option value="klaim">🎁 Jadwal Klaim WDP</option>
+                            <option value="jatuh_tempo">💰 Jatuh Tempo Pembayaran</option>
+                            <option value="pesanan">📝 Jadwal Pesanan</option>
+                            <option value="reminder">⏰ Reminder</option>
+                            <option value="lainnya" selected>📌 Agenda Lain</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group"><label>Catatan (opsional)</label><textarea id="cal-notes" rows="3" placeholder="Detail tambahan..."></textarea></div>
+                <button type="submit" class="btn-premium-action" style="margin-top: 10px;">💾 SIMPAN JADWAL</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="account-stats-modal" class="modal">
+        <div class="modal-content invoice-card-box" style="border-style: solid;">
+            <span class="close-modal" id="btn-close-account-stats">&times;</span>
+            <div id="account-stats-body"></div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/01-config.js"></script>
     <script src="js/02-ui-core.js"></script>
@@ -831,5 +920,6 @@
     <script src="js/08-native-notif.js"></script>
     <script src="js/09-native-enhancements.js"></script>
     <script src="js/10-auth-sync.js"></script>
+    <script src="js/11-luna-features.js"></script>
 </body>
 </html>

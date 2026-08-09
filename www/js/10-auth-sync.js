@@ -109,6 +109,7 @@ async function enterAppAfterLogin(loadingEl, form) {
     renderAll(); renderHomeKeuangan(); buildCRMList();
     const emailLabel = document.getElementById('active-account-email');
     if (emailLabel) emailLabel.textContent = currentAuthUser?.email || '-';
+    if (typeof logActivity === 'function') logActivity('login', `Login sebagai ${currentAuthUser?.email || '-'}`);
 }
 
 // Versi silent dari pullStateFromSupabase (tanpa dialog konfirmasi timpa data,
@@ -132,6 +133,8 @@ async function pullStateForCurrentUser() {
         state.wdpPurchases = cloud.wdpPurchases || [];
         state.gachaLogs = cloud.gachaLogs || [];
         state.logs = cloud.logs || [];
+        state.activityLog = cloud.activityLog || [];
+        state.calendarEvents = cloud.calendarEvents || [];
         state.privacyMode = cloud.privacyMode || false;
         state.financeAdjustment = cloud.financeAdjustment || { pemasukan: 0, saldo: 0 };
         if (cloud.theme) state.theme = cloud.theme;
@@ -158,6 +161,7 @@ async function pushStateForCurrentUser() {
         theme: state.theme, ledger: state.ledger, pengeluaran: state.pengeluaran,
         homeExpenses: state.homeExpenses, capitalPrices: state.capitalPrices,
         wdpPurchases: state.wdpPurchases, gachaLogs: state.gachaLogs, logs: state.logs,
+        activityLog: state.activityLog, calendarEvents: state.calendarEvents,
         privacyMode: state.privacyMode, financeAdjustment: state.financeAdjustment
     };
     try {
@@ -172,6 +176,8 @@ async function pushStateForCurrentUser() {
 }
 
 async function handleLogout() {
+    if (typeof logActivity === 'function') logActivity('logout', `Logout dari akun ${currentAuthUser?.email || '-'}`);
+    saveStateLocal();
     const client = getAuthClient();
     if (client) { try { await client.auth.signOut(); } catch (err) { console.error(err); } }
     currentAuthUser = null;

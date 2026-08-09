@@ -91,6 +91,7 @@ function handleAddWdpPurchase(e) {
         source: 'auto-wdp'
     });
 
+    if (typeof logActivity === 'function') logActivity('wdp', `Beli ${wdpCount} WDP untuk akun "${acc.ign || acc.username}" (Rp ${(totalPrice || 0).toLocaleString('id-ID')})`);
     saveState();
     document.getElementById('wdp-modal')?.classList.remove('open');
     renderAll(); renderHomeKeuangan();
@@ -274,6 +275,10 @@ function toggleWdpClaim(purchaseId, dayIndex) {
         }
     }
 
+    if (typeof logActivity === 'function') {
+        const accName = state.accounts.find(a => a.id === p.accountId)?.ign || p.accountName || '-';
+        logActivity('wdp', willClaim ? `Klaim WDP hari ke-${dayIndex + 1} untuk akun "${accName}"` : `Batal klaim WDP hari ke-${dayIndex + 1} untuk akun "${accName}"`);
+    }
     saveState();
     renderAll();
     renderNotifDropdown();
@@ -376,7 +381,10 @@ function handleAddGachaLog(e) {
 
 function deleteAccount(id) {
     showConfirm("Apakah Anda yakin ingin menghapus akun penjual ini?", () => {
-        state.accounts = state.accounts.filter(a => a.id !== id); saveState(); renderAll(); showToast("🗑️ Akun berhasil dihapus", "success");
+        const acc = state.accounts.find(a => a.id === id);
+        state.accounts = state.accounts.filter(a => a.id !== id);
+        if (typeof logActivity === 'function') logActivity('akun', `Akun "${acc?.ign || acc?.username || id}" dihapus`);
+        saveState(); renderAll(); showToast("🗑️ Akun berhasil dihapus", "success");
     });
 }
 
@@ -799,6 +807,7 @@ function moveTxToTrash(id) {
         }
 
         state.trash.push({ id: "trash_" + Date.now(), type: "Transaksi", meta: `Pembeli: ${item.buyerName || '-'} | ${item.starlightType || '-'}`, rawData: item });
+        if (typeof logActivity === 'function') logActivity('hapus', `Transaksi "${item.buyerName || '-'}" (${item.starlightType || '-'}) dipindah ke kotak sampah`);
         saveState(); renderAll(); buildCRMList(); showToast("🗑️ ...Terbuang ke Kotak Sampah", "success");
     });
 }

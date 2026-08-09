@@ -55,6 +55,16 @@ let state = {
     theme: localStorage.getItem('fl_theme') || 'faust-gold',
     privacyMode: safeParse('fl_privacy', false),
     logs: safeParse('fl_logs', []),
+    // Riwayat Aktivitas terstruktur (fitur baru): tiap entry = {time (ISO), type,
+    // message, entity}. Beda dari state.logs (cuma string mentah, dipertahankan
+    // apa adanya untuk kompatibilitas sinkronisasi lama) — ini dipakai buat
+    // halaman "Riwayat Aktivitas" yang bisa difilter per jenis aktivitas.
+    activityLog: safeParse('fl_activity_log', []),
+    // Kalender Operasional (fitur baru): tiap event = {id, title, date (YYYY-MM-DD),
+    // category, notes, product, status ('pending'|'done'), createdAt}.
+    // Status "Mendesak"/"Akan Datang" dihitung otomatis dari tanggal saat status
+    // masih 'pending'; 'done' = ditandai selesai manual (Selesai/hijau).
+    calendarEvents: safeParse('fl_calendar_events', []),
     ledger: safeParse('fl_ledger', []),
     pengeluaran: safeParse('fl_pengeluaran', []),
     homeExpenses: safeParse('fl_home_expenses', []),
@@ -270,6 +280,7 @@ function markTxAsLunas(txId) {
     if (!t) return;
     t.paymentStatus = 'Lunas';
     t.amountPaid = (parseFloat(t.priceSelling) || 0) - (parseFloat(t.priceDiscount) || 0);
+    if (typeof logActivity === 'function') logActivity('pembayaran', `Status pembayaran "${t.buyerName || 'pembeli'}" diubah jadi LUNAS`);
     saveState(); renderAll(); buildCRMList();
     showToast(`✅ Hutang ${t.buyerName || 'pembeli'} ditandai LUNAS!`, 'success');
 }

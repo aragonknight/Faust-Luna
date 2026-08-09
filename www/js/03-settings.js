@@ -160,6 +160,7 @@ async function pushStateToSupabase() {
         theme: state.theme, ledger: state.ledger, pengeluaran: state.pengeluaran,
         homeExpenses: state.homeExpenses, capitalPrices: state.capitalPrices,
         wdpPurchases: state.wdpPurchases, gachaLogs: state.gachaLogs, logs: state.logs,
+        activityLog: state.activityLog, calendarEvents: state.calendarEvents,
         privacyMode: state.privacyMode, financeAdjustment: state.financeAdjustment
     };
 
@@ -173,6 +174,7 @@ async function pushStateToSupabase() {
             id: rowId, data: payload, updated_at: new Date().toISOString()
         });
         if (error) throw error;
+        if (typeof logActivity === 'function') logActivity('sync', 'Backup manual ke Supabase berhasil');
         showToast('☁️ Backup ke Supabase berhasil!', 'success');
         if (statusEl) statusEl.textContent = `Terakhir backup: ${new Date().toLocaleString('id-ID')}`;
     } catch (err) {
@@ -205,9 +207,12 @@ async function pullStateFromSupabase() {
             state.wdpPurchases = cloud.wdpPurchases || [];
             state.gachaLogs = cloud.gachaLogs || [];
             state.logs = cloud.logs || [];
+            state.activityLog = cloud.activityLog || [];
+            state.calendarEvents = cloud.calendarEvents || [];
             state.privacyMode = cloud.privacyMode || false;
             state.financeAdjustment = cloud.financeAdjustment || { pemasukan: 0, saldo: 0 };
             if (cloud.theme) state.theme = cloud.theme;
+            if (typeof logActivity === 'function') logActivity('sync', 'Tarik data manual dari Supabase berhasil (data lokal ditimpa)');
             saveState(); initTheme(); renderAll(); renderHomeKeuangan(); buildCRMList();
             showToast('✅ Data berhasil ditarik dari Supabase!', 'success', 'yeay');
             const statusEl = document.getElementById('supabase-sync-status');

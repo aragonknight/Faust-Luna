@@ -281,6 +281,7 @@ function renderAll() {
     checkGlobalOverdueAlert();
     renderNotifBadge();
     scheduleNativeReminders();
+    if (typeof renderLunaFeatures === 'function') renderLunaFeatures();
     const dateInput = document.getElementById('pengeluaran-date');
     if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 }
@@ -413,6 +414,7 @@ function handleAddSale(e) {
         });
     }
 
+    if (typeof logActivity === 'function') logActivity('transaksi', `Transaksi baru: ${formatItemLabel({starlightType, diamondQty: qty})} untuk ${buyerName} (Rp ${(priceSelling || 0).toLocaleString('id-ID')})`, { buyerName, starlightType });
     saveState(); renderAll(); buildCRMList();
     e.target.reset(); 
     if(document.getElementById('chat-parser')) document.getElementById('chat-parser').value = '';
@@ -538,6 +540,7 @@ function renderAccountGrid() {
                 <button class="btn-mini-sec" onclick="openWdpModal('${acc.id}')">💰 Beli WDP</button>
                 <button class="btn-mini-sec" onclick="openGachaModal('${acc.id}')">🎰 Catat Gacha</button>
                 <button class="btn-mini-sec" onclick="renderWdpHistory('${acc.id}')">🧾 Riwayat</button>
+                <button class="btn-mini-sec" onclick="openAccountStatsModal('${acc.id}')">📊 Statistik</button>
                 <button class="btn-mini-sec" onclick="openAccountModal('${acc.id}')">✏️ Edit</button>
                 <button class="btn-mini-danger" onclick="deleteAccount('${acc.id}')">🗑️ Hapus</button>
             </div>
@@ -611,7 +614,11 @@ function handleSaveAccount(e) {
     if(id) {
         const acc = state.accounts.find(a => a.id === id);
         Object.assign(acc, { ign, username, password, login_method, basic, premium, gift_slots, diamond, basicGacha, premiumGacha });
-    } else { state.accounts.push({ id: "acc_"+Date.now(), ign, username, password, login_method, basic, premium, gift_slots, diamond, basicGacha, premiumGacha, avgDmCost: 0, avgGachaCostBasic: 0, avgGachaCostPremium: 0 }); }
+        if (typeof logActivity === 'function') logActivity('akun', `Info akun "${ign || username}" diubah`);
+    } else {
+        state.accounts.push({ id: "acc_"+Date.now(), ign, username, password, login_method, basic, premium, gift_slots, diamond, basicGacha, premiumGacha, avgDmCost: 0, avgGachaCostBasic: 0, avgGachaCostPremium: 0 });
+        if (typeof logActivity === 'function') logActivity('akun', `Akun kasir baru ditambahkan: "${ign || username}"`);
+    }
     saveState(); document.getElementById('account-modal')?.classList.remove('open'); renderAll(); showToast("✅ Akun kasir disimpan!", "success");
 }
 
