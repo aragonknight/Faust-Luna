@@ -8,6 +8,76 @@ function renderSettingsForm() {
     if(document.getElementById('set-h1-notif-enabled')) document.getElementById('set-h1-notif-enabled').checked = !!state.settings.h1NotifEnabled;
     if(document.getElementById('set-supabase-url')) document.getElementById('set-supabase-url').value = state.settings.supabaseUrl || '';
     if(document.getElementById('set-supabase-key')) document.getElementById('set-supabase-key').value = state.settings.supabaseKey || '';
+    renderNotifLastScheduled();
+    refreshBatteryOptimWarning();
+}
+
+// Tombol "🔔 TEST NOTIFIKASI" — kirim satu notifikasi instan buat mastiin izin
+// & pluginnya beneran jalan, gak perlu nunggu jadwal beneran kejadian dulu.
+function handleTestNotif() {
+    if (!isNativeApp()) {
+        showToast('ℹ️ Test notifikasi cuma bisa di APK Android, bukan di browser/PWA.', 'error');
+        return;
+    }
+    sendNativeInstantNotification('🔔 Test Notifikasi', 'Kalau ini muncul, notifikasi native FaustLuna Store berhasil aktif!');
+    showToast('🔔 Notifikasi test dikirim, cek status bar HP kamu!', 'success');
+}
+
+// Nampilin kapan terakhir kali scheduleNativeReminders() berhasil jadwalin ulang
+// semua reminder — biar kamu bisa mastiin fitur ini beneran ke-trigger tiap ada
+// perubahan data (dicatat di localStorage tiap kali jadwal ulang berhasil).
+function renderNotifLastScheduled() {
+    const el = document.getElementById('notif-last-scheduled');
+    if (!el) return;
+    const ts = localStorage.getItem('fl_last_scheduled_at');
+    el.textContent = ts
+        ? `🕒 Reminder terakhir dijadwalkan ulang: ${new Date(ts).toLocaleString('id-ID')}`
+        : (isNativeApp() ? '🕒 Belum ada jadwal reminder yang tercatat.' : '');
+}
+
+// Cek status pengecualian battery optimization, tampilkan kartu peringatan
+// kalau app ini masih bisa "dihemat" sistem (yang bikin notif terjadwal
+// berpotensi telat/gak muncul).
+async function refreshBatteryOptimWarning() {
+    const box = document.getElementById('battery-optim-warning');
+    if (!box) return;
+    if (!isNativeApp() || !window.Capacitor?.Plugins?.BatteryOptimization) {
+        box.classList.add('hidden');
+        return;
+    }
+    try {
+        const { ignoring } = await window.Capacitor.Plugins.BatteryOptimization.isIgnoringBatteryOptimizations();
+        box.classList.toggle('hidden', !!ignoring);
+    } catch (err) {
+        console.error('Gagal cek status battery optimization:', err);
+        box.classList.add('hidden');
+    }
+}
+
+// Dipanggil sekali tiap app dibuka — kalau app masih bisa "dihemat" sistem,
+// kasih toast ngarahin ke Pengaturan buat izinin (biar reminder gak telat).
+// Cuma diingetin ulang maks sehari sekali biar gak ganggu (bukan tiap buka app).
+async function maybeSuggestBatteryOptimExemption() {
+    if (!isNativeApp() || !window.Capacitor?.Plugins?.BatteryOptimization) return;
+    const lastPromptKey = 'fl_battery_optim_prompt_at';
+    const lastPrompt = localStorage.getItem(lastPromptKey);
+    if (lastPrompt && (Date.now() - new Date(lastPrompt).getTime()) < 24 * 60 * 60 * 1000) return;
+
+    try {
+        const { ignoring } = await window.Capacitor.Plugins.BatteryOptimization.isIgnoringBatteryOptimizations();
+        if (!ignoring) {
+            showToast('🔋 Biar notif reminder gak telat, izinkan dulu di menu Pengaturan ⚙️', 'error');
+            localStorage.setItem(lastPromptKey, new Date().toISOString());
+        }
+    } catch (err) { console.error('Gagal cek battery optimization saat startup:', err); }
+}
+
+function handleRequestBatteryOptim() {
+    if (!window.Capacitor?.Plugins?.BatteryOptimization) return;
+    window.Capacitor.Plugins.BatteryOptimization.requestIgnoreBatteryOptimizations().then(() => {
+        // Kasih jeda dikit biar user sempat pilih di dialog sistem sebelum kita re-cek statusnya.
+        setTimeout(refreshBatteryOptimWarning, 1500);
+    });
 }
 
 // Dipanggil begitu dropdown H-min diganti — langsung simpan tanpa perlu tombol submit

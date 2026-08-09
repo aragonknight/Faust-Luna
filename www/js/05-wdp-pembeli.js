@@ -344,7 +344,9 @@ function handleAddGachaLog(e) {
     const date = document.getElementById('gacha-date')?.value || new Date().toISOString().split('T')[0];
     if (!mapping) { showToast("❌ Tipe gacha tidak dikenal!", "error"); return; }
     if (qty <= 0 || dmUsed <= 0) { showToast("❌ Isi jumlah item & DM yang abis dengan benar!", "error"); return; }
-    if ((acc.diamond || 0) < dmUsed) { showToast("❌ Sisa DM akun ini nggak cukup buat DM segitu! Catat dulu pembelian WDP-nya.", "error"); return; }
+    // Boleh tetap lanjut walau DM-nya kurang (misal catatnya nyusul) — sisa DM
+    // akun ini bakal jadi minus, cuma dikasih warning aja, gak diblokir.
+    if ((acc.diamond || 0) < dmUsed) { showToast("⚠️ Sisa DM akun ini kurang, bakal jadi minus setelah ini disimpan.", "error"); }
 
     // Modal batch ini (Rupiah) = DM riil yang abis x rata-rata modal/DM akun (bukan
     // konversi fixed 300/750), lalu dirata-rata tertimbang per item ke stok Gacha yang
@@ -388,6 +390,7 @@ function renderPembeliGrid() {
     let filtered = productTx().filter(t => (t.buyerName || '').toLowerCase().includes(searchVal));
     if (hideDelivered) filtered = filtered.filter(t => t.status !== 'Sudah Dikirim');
     if (hideAcc) filtered = filtered.filter(t => t.friendshipChecked !== true);
+    if (document.getElementById('only-debt-check')?.checked) filtered = filtered.filter(t => getTxOutstandingDebt(t) > 0);
 
     const sortMode = document.getElementById('pembeli-sort-select')?.value || 'default';
     if (sortMode === 'due-asc') {
@@ -432,6 +435,14 @@ function renderPembeliGrid() {
             </div>
         ` : '';
 
+        const debtAmount = getTxOutstandingDebt(t);
+        const debtRowHtml = debtAmount > 0 ? `
+            <div class="premium-row">
+                <span class="lbl">Pembayaran:</span>
+                <span class="val" style="color:#ff6b6b; font-weight:bold;">🔴 Hutang Rp ${debtAmount.toLocaleString('id-ID')}</span>
+            </div>
+        ` : '';
+
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div class="card-header-title">${t.buyerName || 'Tanpa Nama'} <span style="font-size:10px; color:var(--text-gold);">${countdownText}</span></div>
@@ -450,6 +461,7 @@ function renderPembeliGrid() {
             <div class="premium-row"><span class="lbl">Produk Item:</span><span class="pill-badge">${formatItemLabel(t)}</span></div>
             ${estRowHtml}
             ${friendshipRowHtml}
+            ${debtRowHtml}
             <div class="card-action-footer">
                 <button class="btn-mini-sec" style="border-color:#e67e22; color:#e67e22;" onclick="addNicknameHistory('${t.id}')">🔄 Nick</button>
                 <button class="btn-mini-sec" style="border-color:#2ecc71; color:#2ecc71;" onclick="generateTestimonialImage('${t.id}')">📸 Testimoni</button>
@@ -457,6 +469,7 @@ function renderPembeliGrid() {
                 <button class="btn-mini-sec" onclick="openEditTxModal('${t.id}')">✏️ Edit</button>
                 <button class="btn-mini-primary" onclick="generateInvoiceModal('${t.id}')">Nota</button>
                 <button class="btn-mini-danger" onclick="moveTxToTrash('${t.id}')">🗑️</button>
+                ${debtAmount > 0 ? `<button class="btn-mini-sec" style="border-color:#2ecc71; color:#2ecc71;" onclick="markTxAsLunas('${t.id}')">✅ Lunas</button>` : ''}
             </div>
         `;
         container.appendChild(card);
@@ -492,6 +505,8 @@ function openEditTxModal(id) {
     document.getElementById('edit-tx-purchase-date').value = tx.purchaseDate || '';
     document.getElementById('edit-tx-est-delivery').value = tx.estDeliveryDate || '';
     document.getElementById('edit-tx-status').value = tx.status || 'Belum Dikirim';
+    document.getElementById('edit-tx-payment-status').value = tx.paymentStatus || 'Lunas';
+    document.getElementById('edit-tx-amount-paid').value = tx.amountPaid != null ? tx.amountPaid : (tx.priceSelling || 0) - (tx.priceDiscount || 0);
 
     if (modal) modal.classList.add('open');
 }
@@ -511,6 +526,10 @@ function handleEditTxSubmit(e) {
     tx.purchaseDate = document.getElementById('edit-tx-purchase-date')?.value || tx.purchaseDate;
     tx.estDeliveryDate = document.getElementById('edit-tx-est-delivery')?.value || tx.estDeliveryDate;
     tx.status = document.getElementById('edit-tx-status')?.value || tx.status;
+    tx.paymentStatus = document.getElementById('edit-tx-payment-status')?.value || 'Lunas';
+    tx.amountPaid = tx.paymentStatus === 'Hutang'
+        ? (parseFloat(document.getElementById('edit-tx-amount-paid')?.value) || 0)
+        : (tx.priceSelling - tx.priceDiscount);
     tx.netProfit = (tx.priceSelling - tx.priceDiscount) - tx.priceCapital;
 
     saveState();

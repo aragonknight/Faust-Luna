@@ -244,3 +244,32 @@ function applyJenisTabStyle() {
 // Akun Penjual (rotasi & potong stok/gift slot) cuma dipakai untuk Starlight Basic/Premium.
 // WDP, Twilight, dan Diamond tidak lewat akun penjual sama sekali.
 // Khusus Diamond, field "Jumlah (Qty)" juga berubah label & fungsi jadi "Jumlah Diamond".
+
+// --- HELPER HUTANG / PIUTANG PEMBELI --- //
+// Transaksi lama (dari sebelum fitur ini ada) gak punya field paymentStatus
+// sama sekali — dianggap Lunas semua (default aman, gak nge-flag histori lama
+// jadi hutang tiba-tiba).
+function getTxOutstandingDebt(t) {
+    if (!t || t.paymentStatus !== 'Hutang') return 0;
+    const total = (parseFloat(t.priceSelling) || 0) - (parseFloat(t.priceDiscount) || 0);
+    const paid = parseFloat(t.amountPaid) || 0;
+    return Math.max(0, total - paid);
+}
+
+function getAllOutstandingDebts() {
+    return state.transactions.filter(t => getTxOutstandingDebt(t) > 0);
+}
+
+function getTotalOutstandingDebt() {
+    return getAllOutstandingDebts().reduce((sum, t) => sum + getTxOutstandingDebt(t), 0);
+}
+
+// Ditandai lunas — nge-set amountPaid ke total penuh (priceSelling - diskon).
+function markTxAsLunas(txId) {
+    const t = state.transactions.find(x => x.id === txId);
+    if (!t) return;
+    t.paymentStatus = 'Lunas';
+    t.amountPaid = (parseFloat(t.priceSelling) || 0) - (parseFloat(t.priceDiscount) || 0);
+    saveState(); renderAll(); buildCRMList();
+    showToast(`✅ Hutang ${t.buyerName || 'pembeli'} ditandai LUNAS!`, 'success');
+}

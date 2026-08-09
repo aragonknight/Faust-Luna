@@ -228,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderSettingsForm();
         runAllReminderChecks();
         setInterval(runAllReminderChecks, 30 * 60 * 1000); // cek ulang tiap 30 menit selama app terbuka
+        maybeSuggestBatteryOptimExemption();
 
         // --- NAVBAR BARU: JAM, SEARCH, NOTIF, AVATAR LUNA ---
         updateHeaderClock();

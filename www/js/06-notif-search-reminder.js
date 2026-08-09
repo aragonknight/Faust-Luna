@@ -26,7 +26,8 @@ function renderNotifBadge() {
     });
     const lowStock = getLowStockAccounts();
     const pendingWdp = getPendingWdpClaims();
-    const total = dueSoon.length + lowStock.length + pendingWdp.length;
+    const debts = getAllOutstandingDebts();
+    const total = dueSoon.length + lowStock.length + pendingWdp.length + debts.length;
 
     if (total > 0) {
         badge.textContent = total > 9 ? '9+' : total;
@@ -45,8 +46,12 @@ function renderNotifDropdown() {
         .sort((a, b) => getDaysRemaining(a.estDeliveryDate) - getDaysRemaining(b.estDeliveryDate));
     const lowStock = getLowStockAccounts();
     const pendingWdp = getPendingWdpClaims();
+    const debts = getAllOutstandingDebts();
 
     let html = '';
+    debts.forEach(t => {
+        html += `<div class="notif-item"><span class="notif-icon">🔴</span><span class="notif-text">Hutang <b>${t.buyerName || 'Tanpa Nama'}</b> — Rp ${getTxOutstandingDebt(t).toLocaleString('id-ID')}</span></div>`;
+    });
     pendingWdp.forEach(pw => {
         const acc = state.accounts.find(a => a.id === pw.purchase.accountId);
         html += `<div class="notif-item"><span class="notif-icon">🎁</span><span class="notif-text">WDP <b>${acc ? (acc.ign || acc.username) : '-'}</b> — Hari ke-${pw.dayIndex + 1}/${getWdpTotalDays(pw.purchase)} belum diklaim (aktif sejak jam ${WDP_CLAIM_HOUR}:00)</span></div>`;
@@ -116,38 +121,19 @@ function showLunaPopup() {
     window._lunaPopupTimeout = setTimeout(() => popup.classList.add('hidden'), 5000);
 }
 
-// --- PENGINGAT OTOMATIS: WHATSAPP (H-N) & NOTIFIKASI BROWSER (H-1) --- //
+// --- PENGINGAT OTOMATIS: NOTIFIKASI BROWSER (H-1), FALLBACK BUAT MODE PWA/BROWSER --- //
+// Reminder H-N & klaim WDP versi native (Android) sekarang dijadwalkan langsung ke
+// OS lewat scheduleNativeReminders() di 08-native-notif.js (dipanggil dari renderAll()),
+// supaya tetap muncul walau app-nya ditutup — makanya dua fungsi cek instan yang lama
+// (checkWhatsappDueReminder & checkWdpClaimReadyReminder) sudah gak dipakai lagi di sini,
+// biar gak dobel kirim notif yang sama.
 function getAllActiveDeliverableTx() {
     // Semua produk (bukan cuma currentProduct) yang masih menunggu kirim dan punya tanggal estimasi kirim
     return state.transactions.filter(t => t.status !== 'Sudah Dikirim' && t.estDeliveryDate);
 }
 
-function checkWhatsappDueReminder() {
-    const hmin = parseInt(state.settings.waHmin) || 2;
-    const notifiedKey = 'fl_wa_notified';
-    const notified = safeParse(notifiedKey, {});
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    getAllActiveDeliverableTx().forEach(t => {
-        const daysLeft = getDaysRemaining(t.estDeliveryDate);
-        // Pakai <= (bukan ===) biar tetap kekejar meski app gak sempat dibuka pas
-        // hari H-nya persis — flag dikunci per transaksi (bukan per tanggal) supaya
-        // notifnya cuma dikirim SEKALI per transaksi, gak diulang tiap hari.
-        if (daysLeft <= hmin) {
-            const flag = `${t.id}`;
-            if (!notified[flag]) {
-                sendNativeInstantNotification(
-                    `⏰ Pengingat H-${hmin} Pengiriman`,
-                    `${t.buyerName || '-'} — ${t.starlightType || '-'} (estimasi kirim: ${t.estDeliveryDate})`
-                );
-                notified[flag] = true;
-            }
-        }
-    });
-    localStorage.setItem(notifiedKey, JSON.stringify(notified));
-}
-
 function checkH1BrowserReminders() {
+    if (isNativeApp()) return; // di APK, semua reminder sudah ditangani scheduleNativeReminders()
     if (!state.settings.h1NotifEnabled) return;
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
@@ -173,30 +159,7 @@ function checkH1BrowserReminders() {
     localStorage.setItem(notifiedKey, JSON.stringify(notified));
 }
 
-// --- PENGINGAT OTOMATIS: KLAIM WDP HARIAN (JAM 16:00) --- //
-function checkWdpClaimReadyReminder() {
-    const notifiedKey = 'fl_wdp_notified';
-    const notified = safeParse(notifiedKey, {});
-
-    getPendingWdpClaims().forEach(pw => {
-        // Flag dikunci per pass+hari (bukan per tanggal kalender) supaya notif
-        // cuma dikirim SEKALI per jatah, walau app baru dibuka beberapa hari kemudian.
-        const flag = `${pw.purchase.id}_${pw.dayIndex}`;
-        if (!notified[flag]) {
-            const acc = state.accounts.find(a => a.id === pw.purchase.accountId);
-            sendNativeInstantNotification(
-                '🎁 WDP Siap Diklaim!',
-                `${acc ? (acc.ign || acc.username) : 'Akun'} — Hari ke-${pw.dayIndex + 1}/${getWdpTotalDays(pw.purchase)}, jangan lupa klaim sekarang.`
-            );
-            notified[flag] = true;
-        }
-    });
-    localStorage.setItem(notifiedKey, JSON.stringify(notified));
-}
-
 function runAllReminderChecks() {
-    checkWhatsappDueReminder();
     checkH1BrowserReminders();
-    checkWdpClaimReadyReminder();
 }
 

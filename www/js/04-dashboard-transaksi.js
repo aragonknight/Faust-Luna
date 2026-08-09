@@ -149,10 +149,12 @@ function setupEventListeners() {
     document.getElementById('theme-switch')?.addEventListener('click', toggleTheme);
     document.getElementById('privacy-toggle')?.addEventListener('click', togglePrivacy);
     document.getElementById('form-penjualan')?.addEventListener('submit', handleAddSale);
+    document.getElementById('payment-status')?.addEventListener('change', togglePaymentStatusFields);
     document.getElementById('form-account')?.addEventListener('submit', handleSaveAccount);
     document.getElementById('search-buyer')?.addEventListener('input', renderPembeliGrid);
     document.getElementById('hide-delivered-check')?.addEventListener('change', renderPembeliGrid);
     document.getElementById('hide-acc-check')?.addEventListener('change', renderPembeliGrid);
+    document.getElementById('only-debt-check')?.addEventListener('change', renderPembeliGrid);
     document.getElementById('rekap-month-filter')?.addEventListener('change', renderRekapPage);
     document.getElementById('close-invoice')?.addEventListener('click', () => document.getElementById('invoice-modal')?.classList.remove('open'));
     document.getElementById('btn-close-invoice-card')?.addEventListener('click', () => document.getElementById('invoice-modal')?.classList.remove('open'));
@@ -191,6 +193,8 @@ function setupEventListeners() {
     document.getElementById('form-settings-supabase')?.addEventListener('submit', handleSaveSupabaseSettings);
     document.getElementById('btn-supabase-push')?.addEventListener('click', pushStateToSupabase);
     document.getElementById('btn-supabase-pull')?.addEventListener('click', pullStateFromSupabase);
+    document.getElementById('btn-test-notif')?.addEventListener('click', handleTestNotif);
+    document.getElementById('btn-battery-optim')?.addEventListener('click', handleRequestBatteryOptim);
 }
 
 function buildCRMList() {
@@ -292,6 +296,11 @@ function handleAddLedger(e) {
     renderLedger(); showToast("💰 Mutasi manual berhasil disimpan!", "success");
 }
 
+function togglePaymentStatusFields() {
+    const isHutang = document.getElementById('payment-status')?.value === 'Hutang';
+    document.getElementById('amount-paid-group')?.classList.toggle('hidden', !isHutang);
+}
+
 function handleAddSale(e) {
     e.preventDefault();
     const buyerName = document.getElementById('buyer-name')?.value || 'Tanpa Nama';
@@ -305,6 +314,8 @@ function handleAddSale(e) {
     const priceDiscount = parseFloat(document.getElementById('price-discount')?.value || 0);
     const purchaseDate = document.getElementById('purchase-date')?.value || new Date().toISOString().split('T')[0];
     const status = document.getElementById('transaction-status')?.value || 'Belum Dikirim';
+    const paymentStatus = document.getElementById('payment-status')?.value || 'Lunas';
+    const amountPaidInput = paymentStatus === 'Hutang' ? (parseFloat(document.getElementById('amount-paid')?.value) || 0) : null;
     
     // Untuk item qty manual (Diamond/Genesis Crystal/Astrite), field ini berfungsi sebagai
     // jumlah currency (disimpan di 1 transaksi, bukan dikalikan jadi banyak baris transaksi
@@ -324,7 +335,10 @@ function handleAddSale(e) {
             if ((acc.gift_slots || 0) < qty) { showToast(`❌ Slot gift tidak cukup!`, "error"); return; }
             // Stok DM cuma dicek buat jalur Biasa (dmPerUnit) — jalur Gacha DM-nya udah
             // dipotong sejak dicatat lewat "Catat Gacha", jadi gak dicek ulang di sini.
-            if (dmPerUnit && (acc.diamond || 0) < dmPerUnit * qty) { showToast(`❌ Stok DM akun ini tidak cukup! Catat dulu pembelian WDP-nya.`, "error"); return; }
+            // Kalau kurang, TETAP DIIZINKAN lanjut (misal lagi ngasih dulu ke pembeli
+            // langganan sambil nunggu restock WDP) — cuma dikasih warning, sisa DM
+            // akun ini bakal jadi minus setelah transaksi ini tersimpan.
+            if (dmPerUnit && (acc.diamond || 0) < dmPerUnit * qty) { showToast(`⚠️ Sisa DM akun ini gak cukup, bakal jadi minus setelah transaksi ini disimpan.`, "error"); }
         }
         // Modal Starlight Basic/Premium (Biasa) SELALU otomatis dari rata-rata modal/DM
         // akun ini. Modal jalur Gacha otomatis dari rata-rata modal/item hasil gacha akun
@@ -345,6 +359,7 @@ function handleAddSale(e) {
     const loopCount = isManualQty ? 1 : qty;
     const finalSellingPerItem = priceSelling / loopCount;
     const finalDiscountPerItem = priceDiscount / loopCount;
+    const finalAmountPaidPerItem = amountPaidInput !== null ? (amountPaidInput / loopCount) : null;
 
     targetIDs.forEach((finalIdText, idx) => {
         for(let q = 0; q < loopCount; q++) {
@@ -377,6 +392,7 @@ function handleAddSale(e) {
                 diamondQty: isManualQty ? qty : undefined,
                 netProfit: (finalSellingPerItem - finalDiscountPerItem) - priceCapital,
                 purchaseDate, estDeliveryDate, status, friendshipChecked: false,
+                paymentStatus, amountPaid: paymentStatus === 'Hutang' ? (finalAmountPaidPerItem || 0) : (finalSellingPerItem - finalDiscountPerItem),
                 nicknameHistory: []
             });
         }
@@ -402,7 +418,8 @@ function handleAddSale(e) {
     if(document.getElementById('chat-parser')) document.getElementById('chat-parser').value = '';
     if(document.getElementById('product-qty')) document.getElementById('product-qty').value = 1;
     updateSalesFormForType();
-    showToast(`🚀 ${targetIDs.length * loopCount} Item Sukses Dimasukkan Antrean!`, "success", "terimaKasih");
+    togglePaymentStatusFields();
+    showToast(`🚀 ${targetIDs.length * loopCount} Item Sukses Dimasukkan Antrean!${paymentStatus === 'Hutang' ? ' (🔴 Hutang tercatat)' : ''}`, "success", "terimaKasih");
 
     // PELINDUNG DATA KOSONG UNTUK NOTIF WHATSAPP
     const textNotif = `*🛒 PESANAN BARU MASUK!*\n\n` +
@@ -515,7 +532,7 @@ function renderAccountGrid() {
             </div>
             <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
             <div class="premium-row"><span class="lbl">Batas Gift:</span><span class="val green-glow">${acc.gift_slots || 0} / 3</span></div>
-            <div class="premium-row"><span class="lbl">Diamonds:</span><span class="val">💎 ${acc.diamond || 0}</span></div>
+            <div class="premium-row"><span class="lbl">Diamonds:</span><span class="val" style="${(acc.diamond || 0) < 0 ? 'color:#ff6b6b; font-weight:bold;' : ''}">💎 ${acc.diamond || 0}${(acc.diamond || 0) < 0 ? ' (minus)' : ''}</span></div>
             <div class="premium-row"><span class="lbl">Rata-rata Modal/DM:</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgDmCost || 0).toLocaleString('id-ID')}</span></div>
             <div class="card-action-footer">
                 <button class="btn-mini-sec" onclick="openWdpModal('${acc.id}')">💰 Beli WDP</button>
