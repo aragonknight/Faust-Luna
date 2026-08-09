@@ -82,9 +82,14 @@ function renderActivityLog() {
 // ------------------------------------------------------------
 // 2) DASHBOARD KESEHATAN TOKO
 // ------------------------------------------------------------
-function computeStoreHealth() {
+function computeStoreHealth(productKey) {
     const todayStr = new Date().toISOString().split('T')[0];
-    const allTx = state.transactions || [];
+    const allTxAll = state.transactions || [];
+    // Kalau productKey diisi (dipanggil dari dashboard tiap produk), filter transaksi
+    // supaya angka omzet/profit/dsb yang ditampilkan cuma punya produk itu — bukan
+    // gabungan semua produk. Kalau kosong (dipanggil dari Luna Assistant di Home),
+    // tetap hitung gabungan semua produk seperti semula.
+    const allTx = productKey ? allTxAll.filter(t => TYPE_TO_PRODUCT[t.starlightType] === productKey) : allTxAll;
     const todayTx = allTx.filter(t => t.purchaseDate === todayStr);
 
     const sumOmzet = list => list.reduce((s, t) => s + ((parseFloat(t.priceSelling) || 0) - (parseFloat(t.priceDiscount) || 0)), 0);
@@ -94,10 +99,18 @@ function computeStoreHealth() {
     const profitToday = sumProfit(todayTx);
     const totalTransaksiToday = todayTx.length;
     const pesananBelumSelesai = allTx.filter(t => t.status !== 'Sudah Dikirim').length;
-    const wdpBelumDiklaim = (typeof getPendingWdpClaims === 'function') ? getPendingWdpClaims().length : 0;
-    const akunLimit = (state.accounts || []).filter(a => (a.gift_slots || 0) <= 0);
-    const akunMendekati = (state.accounts || []).filter(a => (a.gift_slots || 0) === 1);
-    const totalHutang = (typeof getTotalOutstandingDebt === 'function') ? getTotalOutstandingDebt() : 0;
+
+    // WDP & akun kasir (gift slot/DM pool) adalah konsep KHUSUS Mobile Legends —
+    // game lain top up langsung ke UID pembeli tanpa akun kasir. Jadi kedua metrik
+    // ini cuma dihitung kalau lagi di produk Mobile Legends (atau gabungan di Home).
+    const isMobileLegContext = !productKey || productKey === 'mobileleg';
+    const wdpBelumDiklaim = isMobileLegContext && typeof getPendingWdpClaims === 'function' ? getPendingWdpClaims().length : 0;
+    const akunLimit = isMobileLegContext ? (state.accounts || []).filter(a => (a.gift_slots || 0) <= 0) : [];
+    const akunMendekati = isMobileLegContext ? (state.accounts || []).filter(a => (a.gift_slots || 0) === 1) : [];
+
+    // Hutang pembeli tetap relevan di semua produk (transaksi apapun bisa berstatus
+    // "Hutang"), jadi ikut difilter per produk juga.
+    const totalHutang = allTx.reduce((s, t) => s + (typeof getTxOutstandingDebt === 'function' ? getTxOutstandingDebt(t) : 0), 0);
 
     const now = new Date();
     const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay()); startOfWeek.setHours(0, 0, 0, 0);
@@ -115,23 +128,29 @@ function computeStoreHealth() {
     const yd = new Date(); yd.setDate(yd.getDate() - 1);
     const omzetYesterday = sumOmzet(allTx.filter(t => t.purchaseDate === yd.toISOString().split('T')[0]));
 
-    return { todayStr, omzetToday, profitToday, totalTransaksiToday, pesananBelumSelesai, wdpBelumDiklaim, akunLimit, akunMendekati, totalHutang, omzetWeek, omzetMonth, chartData, omzetYesterday };
+    return { todayStr, omzetToday, profitToday, totalTransaksiToday, pesananBelumSelesai, wdpBelumDiklaim, akunLimit, akunMendekati, totalHutang, omzetWeek, omzetMonth, chartData, omzetYesterday, isMobileLegContext };
 }
 
 function renderHomeHealthDashboard() {
     const grid = document.getElementById('health-grid');
-    if (!grid) return null; // elemen cuma ada di halaman Dashboard Home
+    if (!grid) return null; // elemen cuma ada di halaman Dashboard tiap produk (page-dashboard)
 
-    const h = computeStoreHealth();
+    // Dipanggil setelah currentProduct di-set (lewat switchToProduct -> renderAll),
+    // jadi kartu ini otomatis nampilin data khusus produk yang lagi dibuka.
+    const h = computeStoreHealth(currentProduct);
     const fmt = n => `Rp ${Math.round(n || 0).toLocaleString('id-ID')}`;
+
+    const mlOnlyRows = h.isMobileLegContext ? `
+        <div class="health-metric-card ${h.wdpBelumDiklaim > 0 ? 'hm-warn' : 'hm-ok'}"><span class="hm-icon">🎁</span><span class="hm-label">WDP Belum Diklaim</span><span class="hm-value">${h.wdpBelumDiklaim}</span></div>
+        <div class="health-metric-card ${h.akunLimit.length > 0 ? 'hm-warn' : 'hm-ok'}"><span class="hm-icon">🛡️</span><span class="hm-label">Akun Limit / Hampir</span><span class="hm-value">${h.akunLimit.length} / ${h.akunMendekati.length}</span></div>
+    ` : '';
 
     grid.innerHTML = `
         <div class="health-metric-card"><span class="hm-icon">💰</span><span class="hm-label">Omzet Hari Ini</span><span class="hm-value privacy-hide">${fmt(h.omzetToday)}</span></div>
         <div class="health-metric-card"><span class="hm-icon">📈</span><span class="hm-label">Profit Hari Ini</span><span class="hm-value privacy-hide">${fmt(h.profitToday)}</span></div>
         <div class="health-metric-card"><span class="hm-icon">🧾</span><span class="hm-label">Total Transaksi</span><span class="hm-value">${h.totalTransaksiToday}</span></div>
         <div class="health-metric-card ${h.pesananBelumSelesai > 0 ? 'hm-warn' : 'hm-ok'}"><span class="hm-icon">📦</span><span class="hm-label">Pesanan Belum Selesai</span><span class="hm-value">${h.pesananBelumSelesai}</span></div>
-        <div class="health-metric-card ${h.wdpBelumDiklaim > 0 ? 'hm-warn' : 'hm-ok'}"><span class="hm-icon">🎁</span><span class="hm-label">WDP Belum Diklaim</span><span class="hm-value">${h.wdpBelumDiklaim}</span></div>
-        <div class="health-metric-card ${h.akunLimit.length > 0 ? 'hm-warn' : 'hm-ok'}"><span class="hm-icon">🛡️</span><span class="hm-label">Akun Limit / Hampir</span><span class="hm-value">${h.akunLimit.length} / ${h.akunMendekati.length}</span></div>
+        ${mlOnlyRows}
         <div class="health-metric-card ${h.totalHutang > 0 ? 'hm-warn' : 'hm-ok'}" style="grid-column: span 2;"><span class="hm-icon">🧮</span><span class="hm-label">Total Hutang Pembeli</span><span class="hm-value privacy-hide">${fmt(h.totalHutang)}</span></div>
     `;
 
