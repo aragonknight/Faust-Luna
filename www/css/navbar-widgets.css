@@ -60,7 +60,10 @@
 
 /* --- POPUP LUNA (KLIK AVATAR) --- */
 .luna-popup {
-    position: absolute;
+    /* fixed (bukan absolute) supaya gak kesensor overflow:hidden punya
+       .app-header (dipakai buat efek shine) -- lihat catatan yang sama
+       di .notif-dropdown & .search-overlay */
+    position: fixed;
     top: 56px;
     right: 20px;
     z-index: 200;
@@ -96,7 +99,7 @@
 
 /* --- DROPDOWN NOTIFIKASI --- */
 .notif-dropdown {
-    position: absolute;
+    position: fixed;
     top: 56px;
     right: 20px;
     z-index: 200;
@@ -144,7 +147,7 @@
 
 /* --- OVERLAY SEARCH --- */
 .search-overlay {
-    position: absolute;
+    position: fixed;
     top: 56px;
     left: 12px;
     right: 12px;
