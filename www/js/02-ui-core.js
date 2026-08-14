@@ -238,7 +238,6 @@ document.addEventListener("DOMContentLoaded", () => {
         renderNotifDropdown();
 
         document.getElementById('btn-search-toggle')?.addEventListener('click', () => {
-            document.getElementById('notif-dropdown')?.classList.add('hidden');
             document.getElementById('luna-popup')?.classList.add('hidden');
             const overlay = document.getElementById('search-overlay');
             overlay?.classList.toggle('hidden');
@@ -253,27 +252,19 @@ document.addEventListener("DOMContentLoaded", () => {
             renderSearchResults(e.target.value);
         });
 
-        document.getElementById('btn-notif-toggle')?.addEventListener('click', () => {
-            document.getElementById('search-overlay')?.classList.add('hidden');
-            document.getElementById('luna-popup')?.classList.add('hidden');
-            renderNotifDropdown();
-            document.getElementById('notif-dropdown')?.classList.toggle('hidden');
-        });
-
+        // Tombol profil Luna: gabungan avatar + notifikasi jadi satu panel
         document.getElementById('btn-luna-avatar')?.addEventListener('click', () => {
             document.getElementById('search-overlay')?.classList.add('hidden');
-            document.getElementById('notif-dropdown')?.classList.add('hidden');
             playSound('click');
             showLunaPopup();
         });
 
-        // Klik di luar panel navbar (search/notif/luna) otomatis menutup panel yang terbuka
+        // Klik di luar panel navbar (search/profil luna) otomatis menutup panel yang terbuka
         document.addEventListener('click', (e) => {
-            const isNavBtn = e.target.closest('#btn-search-toggle, #btn-notif-toggle, #btn-luna-avatar');
-            const isPanel = e.target.closest('#search-overlay, #notif-dropdown, #luna-popup');
+            const isNavBtn = e.target.closest('#btn-search-toggle, #btn-luna-avatar');
+            const isPanel = e.target.closest('#search-overlay, #luna-popup');
             if (!isNavBtn && !isPanel) {
                 document.getElementById('search-overlay')?.classList.add('hidden');
-                document.getElementById('notif-dropdown')?.classList.add('hidden');
                 document.getElementById('luna-popup')?.classList.add('hidden');
             }
         });

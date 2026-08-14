@@ -56,11 +56,12 @@
             <div class="header-controls">
                 <span id="header-clock" class="header-clock">--:--</span>
                 <button id="btn-search-toggle" class="btn-icon-nav" title="Cari Transaksi">🔍</button>
-                <button id="btn-notif-toggle" class="btn-icon-nav" title="Notifikasi">🔔<span id="notif-badge" class="notif-badge hidden">0</span></button>
-                <button id="btn-luna-avatar" class="btn-luna-avatar" title="Halo dari Luna!">
-                    <img src="assets/maskot/luna-hai.jpg" alt="Luna">
-                </button>
-                <button id="btn-fullscreen-home" class="btn-icon-nav btn-fullscreen-toggle" title="Fullscreen">⛶</button>
+                <div class="luna-nav-wrap">
+                    <button id="btn-luna-avatar" class="btn-luna-avatar" title="Profil Luna">
+                        <img src="assets/maskot/luna-hai.jpg" alt="Luna">
+                    </button>
+                    <span id="notif-badge" class="notif-badge hidden">0</span>
+                </div>
             </div>
 
             <div id="search-overlay" class="search-overlay hidden">
@@ -72,14 +73,13 @@
                 <div id="search-results" class="search-results"></div>
             </div>
 
-            <div id="notif-dropdown" class="notif-dropdown hidden">
+            <div id="luna-popup" class="luna-popup hidden">
+                <div class="luna-popup-header">
+                    <img id="luna-popup-img" src="assets/maskot/luna-hai.jpg" alt="Luna">
+                    <p id="luna-popup-text"></p>
+                </div>
                 <div class="notif-dropdown-title">🔔 Notifikasi</div>
                 <div id="notif-list" class="notif-list"></div>
-            </div>
-
-            <div id="luna-popup" class="luna-popup hidden">
-                <img id="luna-popup-img" src="assets/maskot/luna-hai.jpg" alt="Luna">
-                <p id="luna-popup-text"></p>
             </div>
         </header>
 
@@ -326,7 +326,6 @@
         <button id="menu-toggle" class="hamburger-btn">☰</button>
         <h1 class="header-title" id="product-header-title">FAUSTLUNA STORE</h1>
         <div class="header-controls">
-            <button id="btn-fullscreen" class="btn-icon-nav btn-fullscreen-toggle" title="Fullscreen">⛶</button>
             <button id="btn-install-pwa" class="btn-icon-nav hidden" style="border-color: #2ecc71; color: #2ecc71;" title="Install App">📥</button>
             <button id="btn-live-mode" class="btn-icon-nav" style="border-color: #ff00ff; color: #ff00ff;" title="Live Mode">📺</button>
             <button id="theme-switch" class="btn-icon-nav" title="Ganti Tema">🌓</button>

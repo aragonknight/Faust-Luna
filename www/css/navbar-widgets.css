@@ -13,6 +13,13 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* --- WRAPPER AVATAR LUNA + BADGE NOTIF (NAVBAR) --- */
+.luna-nav-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
 /* --- AVATAR LUNA DI NAVBAR --- */
 .btn-luna-avatar {
     width: 30px;
@@ -41,21 +48,22 @@
 /* --- BADGE NOTIFIKASI --- */
 .notif-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -6px;
+    right: -6px;
     background: var(--danger-red);
     color: #fff;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: bold;
-    min-width: 15px;
-    height: 15px;
-    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 3px;
+    padding: 0 4px;
     line-height: 1;
     box-shadow: 0 0 0 2px var(--bg-card);
+    z-index: 5;
 }
 
 /* --- POPUP LUNA (KLIK AVATAR) --- */
@@ -70,17 +78,22 @@
     background: var(--bg-card);
     border: 1px solid var(--text-gold);
     border-radius: 14px;
-    padding: 14px;
-    width: min(78vw, 260px);
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    width: min(88vw, 320px);
+    max-height: 420px;
+    overflow-y: auto;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     animation: popupFadeIn 0.2s ease;
 }
+.luna-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border-bottom: 1px solid var(--accent-alpha);
+}
 .luna-popup img {
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--text-gold);
@@ -218,18 +231,20 @@
 .sidebar {
     position: fixed;
     top: 0;
-    left: -260px;
+    left: 0;
     width: 250px;
     height: 100%;
     background: var(--bg-card);
     z-index: 101;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(-110%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     box-shadow: 5px 0 15px rgba(0,0,0,0.5);
 }
-.sidebar.open { left: 0; }
+.sidebar.open { transform: translateX(0); }
 .sidebar-brand {
     padding: 22px;
     font-size: 16px;

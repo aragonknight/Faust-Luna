@@ -28,6 +28,7 @@
     position: absolute;
     border-radius: 50%;
     background: #fff;
+    box-shadow: 0 0 4px 1px rgba(255,255,255,0.6);
     animation: starTwinkle ease-in-out infinite;
 }
 @keyframes starTwinkle {
@@ -109,6 +110,7 @@
 .header-controls button:active, .hamburger-btn:active {
     transform: scale(0.94);
 }
+#btn-notif-toggle { overflow: visible !important; }
 .fl-ripple {
     position: absolute;
     border-radius: 50%;
