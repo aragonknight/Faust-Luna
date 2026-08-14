@@ -2,6 +2,19 @@
 // EVENT LISTENERS, DASHBOARD, TAMBAH TRANSAKSI/LEDGER, EXPORT-IMPORT, AKUN
 // (bagian dari script.js asli - FaustLuna Store)
 // ============================================================
+// Selama sidebar lagi geser buka/tutup (durasi transition-nya di CSS = 0.3s),
+// body dikasih class fx-sidebar-busy biar animasi ambient (drift nebula,
+// sheen header) di-pause dulu -- ngurangin beban compositor pas transform
+// sidebar jalan, jadi animasinya lebih mulus/gak ngelag.
+let _sidebarBusyTimeout = null;
+function markSidebarBusy() {
+    document.body.classList.add('fx-sidebar-busy');
+    clearTimeout(_sidebarBusyTimeout);
+    _sidebarBusyTimeout = setTimeout(() => {
+        document.body.classList.remove('fx-sidebar-busy');
+    }, 350);
+}
+
 function setupEventListeners() {
     document.addEventListener('click', (e) => {
         if(e.target.tagName === 'BUTTON' || e.target.classList.contains('menu-item')) {
@@ -21,8 +34,8 @@ function setupEventListeners() {
     const homeMenuToggle = document.getElementById('home-menu-toggle');
     const homeSidebar = document.getElementById('home-sidebar');
     const homeOverlay = document.getElementById('home-sidebar-overlay');
-    homeMenuToggle?.addEventListener('click', () => { homeSidebar?.classList.toggle('open'); homeOverlay?.classList.toggle('show'); });
-    homeOverlay?.addEventListener('click', () => { homeSidebar?.classList.remove('open'); homeOverlay?.classList.remove('show'); });
+    homeMenuToggle?.addEventListener('click', () => { homeSidebar?.classList.toggle('open'); homeOverlay?.classList.toggle('show'); markSidebarBusy(); });
+    homeOverlay?.addEventListener('click', () => { homeSidebar?.classList.remove('open'); homeOverlay?.classList.remove('show'); markSidebarBusy(); });
 
     // Status: apakah lagi dalam mode layar penuh. Dipisah dari
     // document.fullscreenElement karena di APK (Capacitor WebView), Web
@@ -159,8 +172,8 @@ function setupEventListeners() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     
-    menuToggle?.addEventListener('click', () => { sidebar?.classList.toggle('open'); overlay?.classList.toggle('show'); });
-    overlay?.addEventListener('click', () => { sidebar?.classList.remove('open'); overlay?.classList.remove('show'); });
+    menuToggle?.addEventListener('click', () => { sidebar?.classList.toggle('open'); overlay?.classList.toggle('show'); markSidebarBusy(); });
+    overlay?.addEventListener('click', () => { sidebar?.classList.remove('open'); overlay?.classList.remove('show'); markSidebarBusy(); });
     
     document.getElementById('btn-back-home')?.addEventListener('click', goHome);
 

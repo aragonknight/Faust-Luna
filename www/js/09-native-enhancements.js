@@ -91,7 +91,9 @@
             // 2) sidebar terbuka?
             const openSidebar = document.querySelector('.sidebar-overlay.show');
             if (openSidebar) {
+                document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
                 document.querySelectorAll('.sidebar-overlay').forEach(o => o.classList.remove('show'));
+                if (typeof markSidebarBusy === 'function') markSidebarBusy();
                 window.flHaptic('light');
                 return;
             }
