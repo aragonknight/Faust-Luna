@@ -7,21 +7,21 @@
 .spa-page { display: none; }
 .spa-page.active { display: block; }
 
-/* --- PREMIUM CARD DESIGN (glassmorphism, background starfield keliatan tembus) --- */
+/* --- PREMIUM CARD DESIGN (glassmorphism "faux" - transparan tanpa blur) ---
+   Catatan: .premium-card ini dipakai berulang di JS buat tiap baris
+   transaksi/akun/pembeli (bisa puluhan instance sekaligus). backdrop-filter
+   asli sempat dicoba di sini tapi itu bikin browser ngeblur-composite
+   puluhan elemen tiap scroll -> lag parah di seluruh app. Jadi efek "kaca"
+   di sini dibikin tanpa blur (cuma transparan + border tipis), background
+   starfield tetap keliatan tembus tapi ringan di GPU. */
 .premium-card {
-    background: var(--bg-card-glass);
-    -webkit-backdrop-filter: blur(14px) saturate(150%);
-    backdrop-filter: blur(14px) saturate(150%);
+    background: var(--bg-card-glass-strong);
     border: 1px solid var(--border-glass);
     border-radius: 8px;
     padding: 18px;
     margin-bottom: 15px;
     position: relative;
     box-shadow: 0 4px 18px rgba(0,0,0,0.35);
-}
-/* Fallback buat WebView/browser lama yang gak support backdrop-filter */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .premium-card { background: var(--bg-card-glass-strong); }
 }
 .card-header-title {
     font-size: 13px;
@@ -92,13 +92,8 @@
 /* --- REKAP STATS --- */
 .stats-premium-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
 .stat-mini-box {
-    background: var(--bg-card-glass);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
-    backdrop-filter: blur(10px) saturate(140%);
+    background: var(--bg-card-glass-strong);
     padding: 12px; border-radius: 6px; text-align: center; border: 1px solid var(--accent-alpha-low);
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .stat-mini-box { background: var(--bg-card-glass-strong); }
 }
 .stat-mini-box .lbl { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
 .stat-mini-box .val { font-size: 13px; font-weight: bold; }
@@ -147,14 +142,9 @@
 .hint-text { color: var(--text-gold); font-size:11px; display:block; margin-top:2px;}
 .agenda-item {
     display:flex; justify-content:space-between; align-items:center;
-    background: rgba(0,0,0,0.22);
-    -webkit-backdrop-filter: blur(8px) saturate(130%);
-    backdrop-filter: blur(8px) saturate(130%);
+    background: rgba(0,0,0,0.28);
     padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; font-size:12px;
     border: 1px solid rgba(255,255,255,0.04);
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .agenda-item { background: rgba(6,8,18,0.6); }
 }
 .select-clean { background:transparent; border:1px solid var(--accent-alpha); color:white; font-size:11px; padding:4px; border-radius:4px;}
 .ledger-row { display: flex; justify-content: space-between; font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
