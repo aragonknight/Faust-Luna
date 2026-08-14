@@ -340,6 +340,7 @@
             <li class="menu-item" id="menu-item-input-penjualan" data-target="input-penjualan">📝 Input Penjualan</li>
             <li class="menu-item" id="menu-item-stok" data-target="stok">📦 Info Stok Akun</li>
             <li class="menu-item" id="menu-item-klaim-wdp" data-target="klaim-wdp">🎁 Klaim WDP</li>
+            <li class="menu-item" id="menu-item-pertemanan" data-target="pertemanan">👫 Pertemanan Akun</li>
             <li class="menu-item" data-target="pembeli">👥 Info Pembeli</li>
             <li class="menu-item" data-target="rekap">📈 Rekap Jualan</li>
             <li class="menu-item" id="menu-item-pengeluaran" data-target="pengeluaran">💸 Pengeluaran & Laporan</li>
@@ -617,6 +618,24 @@
             <div id="klaim-wdp-list"></div>
         </section>
 
+        <section id="page-pertemanan" class="spa-page">
+            <div class="section-header-box">
+                <h2>👫 Pertemanan Akun Penjual & Pembeli</h2>
+            </div>
+            <div class="premium-card" style="margin-bottom: 15px; padding: 12px 15px; font-size: 11px; color: var(--text-muted);">
+                Rekap per akun penjual: pembeli mana aja yang sudah berteman (ACC pertemanan H+7 sudah dicentang) dan yang masih ditunggu. Cuma nampilin transaksi Starlight (Basic/Premium/Gacha), soalnya cuma tipe itu yang butuh proses pertemanan.
+            </div>
+            <div class="form-group" style="max-width:220px; margin-bottom:10px;">
+                <label style="font-size:10px;">Urutkan Akun</label>
+                <select id="pertemanan-sort-select" class="select-clean">
+                    <option value="default">Default</option>
+                    <option value="belum-terbanyak">Belum Berteman Terbanyak</option>
+                    <option value="nama-az">Nama Akun A-Z</option>
+                </select>
+            </div>
+            <div id="pertemanan-grid" class="premium-grid-layout"></div>
+        </section>
+
         <section id="page-pembeli" class="spa-page">
             <div class="section-header-box">
                 <h2>👥 Antrean Antarmuka Pembeli</h2>
@@ -755,6 +774,7 @@
                     <div class="form-group"><label>Stok Basic</label><input type="number" id="acc-basic" value="0" min="0" required></div>
                     <div class="form-group"><label>Stok Premium</label><input type="number" id="acc-premium" value="0" min="0" required></div>
                 </div>
+                <p style="font-size:10px; color:var(--text-muted); margin:-4px 0 8px;">💡 Nambah 1 Stok Basic/Premium di sini otomatis motong Sisa Diamond (300 DM/Basic, 750 DM/Premium) & nambah Poin Gift sejumlah DM yang berkurang (1:1).</p>
                 <div class="form-group" style="margin-bottom:2px;"><label style="color:var(--text-gold); font-size:11px;">🎰 STOK GACHA</label></div>
                 <div class="form-row">
                     <div class="form-group"><label>Stok Basic (Gacha)</label><input type="number" id="acc-basic-gacha" value="0" min="0" required></div>
@@ -762,6 +782,9 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Limit Gift</label><input type="number" id="acc-gift" value="3" min="0" max="3" required></div>
+                    <div class="form-group"><label>Poin Gift</label><input type="number" id="acc-gift-poin" value="0" min="0" required></div>
+                </div>
+                <div class="form-row">
                     <div class="form-group"><label>Sisa Diamond</label><input type="number" id="acc-dm" value="0" required></div>
                 </div>
                 <button type="submit" class="btn-premium-action" style="margin-top: 10px;">SIMPAN DATA STOK</button>
@@ -808,7 +831,7 @@
                     <div class="form-group"><label>Total DM yang Abis</label><input type="number" id="gacha-dm-used" min="1" placeholder="Contoh: 140" required></div>
                 </div>
                 <div class="form-group"><label>Tanggal</label><input type="date" id="gacha-date" required></div>
-                <p style="font-size:10px; color:var(--text-muted);">DM di atas langsung dipotong dari sisa DM akun ini (bukan konversi fixed 300/750), dan modal rata-rata per item stok Gacha akan dihitung ulang otomatis.</p>
+                <p style="font-size:10px; color:var(--text-muted);">DM di atas langsung dipotong dari sisa DM akun ini (bukan konversi fixed 300/750), dan modal rata-rata per item stok Gacha akan dihitung ulang otomatis. Poin Gift akun ini juga ikut nambah 1:1 sesuai DM yang abis.</p>
                 <button type="submit" class="btn-premium-action" style="margin-top: 10px;">💾 SIMPAN HASIL GACHA</button>
             </form>
         </div>
