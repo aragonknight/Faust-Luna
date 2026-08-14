@@ -1,4 +1,4 @@
-const CACHE_NAME = 'faustluna-store-v10.0';
+const CACHE_NAME = 'faustluna-store-v10.1';
 const ASSETS = [
     './',
     './index.html',
@@ -6,6 +6,8 @@ const ASSETS = [
     './css/navbar-widgets.css',
     './css/layout-components.css',
     './css/mascot-landing.css',
+    './css/luna-features.css',
+    './css/night-sky-fx.css',
     './js/01-config.js',
     './js/02-ui-core.js',
     './js/03-settings.js',
@@ -15,6 +17,9 @@ const ASSETS = [
     './js/07-keuangan-laporan.js',
     './js/08-native-notif.js',
     './js/09-native-enhancements.js',
+    './js/10-auth-sync.js',
+    './js/11-luna-features.js',
+    './js/12-starfield.js',
     './manifest.json',
     './logo.png',
     './icons/icon-192.png',
@@ -32,7 +37,10 @@ const ASSETS = [
     './assets/maskot/luna-hmm.jpg',
     './assets/maskot/luna-baca-buku.jpg',
     './assets/maskot/luna-tongkat.jpg',
-    './assets/maskot/luna-peluk-bintang.jpg'
+    './assets/maskot/luna-peluk-bintang.jpg',
+    './assets/games/genshin.png',
+    './assets/games/wuthering.png',
+    './assets/games/mobileleg.png'
 ];
 
 self.addEventListener('install', e => {

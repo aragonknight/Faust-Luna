@@ -3,22 +3,31 @@
 /* (bagian dari style.css asli - FaustLuna Store) */
 /* ============================================================ */
 /* --- GLOBAL VARIABLE THEMES LOGIC --- */
+/* Tema utama: "Luna Night Sky" - langit malam berbintang, aksen starlight lavender
+   dipadu gold khas Faust untuk CTA/harga, biar tetap terasa "FaustLuna". */
 :root, [data-theme="faust-gold"] {
-    --bg-main: #060b14;
-    --bg-card: #091124;
-    --text-gold: #d4af37;
-    --text-white: #ffffff;
-    --text-muted: #8899a6;
-    --success-green: #2ecc71;
-    --danger-red: #e74c3c;
-    --booking-purple: #9b59b6;
-    --accent-alpha: rgba(214, 175, 55, 0.15);
-    --accent-alpha-low: rgba(214, 175, 55, 0.05);
+    --bg-main: #05060f;
+    --bg-main-2: #0b0a1c;
+    --bg-card: #0e1226;
+    --text-gold: #e8c76b;
+    --text-starlight: #b9a6ff;
+    --text-white: #f3f1ff;
+    --text-muted: #9691b8;
+    --success-green: #4ade80;
+    --danger-red: #f8717a;
+    --booking-purple: #a78bfa;
+    --accent-alpha: rgba(185, 166, 255, 0.18);
+    --accent-alpha-low: rgba(185, 166, 255, 0.07);
+    --nebula-1: rgba(122, 90, 248, 0.35);
+    --nebula-2: rgba(58, 100, 214, 0.25);
+    --nebula-3: rgba(232, 199, 107, 0.12);
 }
 [data-theme="luna-neon"] {
     --bg-main: #090514;
+    --bg-main-2: #0d0620;
     --bg-card: #110924;
     --text-gold: #00e5ff;
+    --text-starlight: #d500f9;
     --text-white: #ffffff;
     --text-muted: #9fa8da;
     --success-green: #00ff88;
@@ -26,6 +35,9 @@
     --booking-purple: #d500f9;
     --accent-alpha: rgba(0, 229, 255, 0.2);
     --accent-alpha-low: rgba(0, 229, 255, 0.06);
+    --nebula-1: rgba(0, 229, 255, 0.3);
+    --nebula-2: rgba(213, 0, 249, 0.22);
+    --nebula-3: rgba(0, 229, 255, 0.1);
 }
 
 body {
@@ -35,6 +47,7 @@ body {
     color: var(--text-white);
     overflow-x: hidden;
     transition: background-color 0.3s, color 0.3s;
+    position: relative;
 }
 
 body.live-presentation-active .live-hide, 
