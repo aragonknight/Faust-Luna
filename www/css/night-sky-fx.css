@@ -4,25 +4,43 @@
 /* di seluruh komponen (dipisah dari file CSS fungsional lain)   */
 /* ============================================================ */
 
-/* --- 1. AMBIENT NEBULA + STARFIELD LAYER --- */
+/* --- 1. AMBIENT NEBULA + STARFIELD LAYER ---
+   Dulu drift-nya animasi `background-position` di layer full-viewport -> itu
+   REPAINT (bukan cuma composite) tiap frame, jadi rebutan main-thread sama
+   animasi transform sidebar pas dibuka -> yang bikin ngelag. Sekarang nebula
+   dipindah ke pseudo-element sendiri yang di-drift pakai `transform`
+   (translate+scale), jadi cuma di-composite di GPU, gak pernah repaint ulang. */
 #starfield-container {
     position: fixed;
     inset: 0;
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
+    background: var(--bg-main);
+    contain: strict;
+}
+#starfield-container::before {
+    content: '';
+    position: absolute;
+    inset: -25%;
     background:
         radial-gradient(ellipse 80% 50% at 20% 0%, var(--nebula-1), transparent 60%),
         radial-gradient(ellipse 70% 45% at 85% 15%, var(--nebula-2), transparent 60%),
-        radial-gradient(ellipse 60% 40% at 50% 100%, var(--nebula-3), transparent 65%),
-        var(--bg-main);
-    background-size: 220% 220%, 220% 220%, 220% 220%, 100% 100%;
+        radial-gradient(ellipse 60% 40% at 50% 100%, var(--nebula-3), transparent 65%);
+    will-change: transform;
     animation: nebulaDrift 38s ease-in-out infinite alternate;
 }
 @keyframes nebulaDrift {
-    0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
-    50%  { background-position: 30% 20%, 70% 30%, 60% 80%, 0 0; }
-    100% { background-position: 10% 40%, 90% 10%, 40% 90%, 0 0; }
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(-4%, 3%, 0) scale(1.06); }
+    100% { transform: translate3d(3%, -4%, 0) scale(1.03); }
+}
+/* Pas sidebar lagi kebuka/tutup, drift nebula & sheen header di-pause
+   sebentar biar semua "jatah" compositor kepakai buat animasi geser
+   sidebar-nya -> hasilnya slide lebih mulus, gak keliatan patah-patah. */
+body.fx-sidebar-busy #starfield-container::before,
+body.fx-sidebar-busy .app-header::after {
+    animation-play-state: paused;
 }
 .fl-star {
     position: absolute;
@@ -276,7 +294,7 @@
 
 /* --- 12. REDUCED MOTION: MATIKAN EFEK BERAT --- */
 @media (prefers-reduced-motion: reduce) {
-    #starfield-container, .fl-star, .fl-shooting-star, .app-header::after,
+    #starfield-container::before, .fl-star, .fl-shooting-star, .app-header::after,
     .premium-card::before, .product-card, .sidebar .menu-item, .avatar-glow,
     .maskot-widget-avatar::after, .landing-title, .landing-content > *,
     .status-booking, .status-belum, .spa-page.active {

@@ -21,6 +21,9 @@
     --nebula-1: rgba(122, 90, 248, 0.35);
     --nebula-2: rgba(58, 100, 214, 0.25);
     --nebula-3: rgba(232, 199, 107, 0.12);
+    --bg-card-glass: rgba(14, 18, 38, 0.5);
+    --bg-card-glass-strong: rgba(14, 18, 38, 0.68);
+    --border-glass: rgba(185, 166, 255, 0.28);
 }
 [data-theme="luna-neon"] {
     --bg-main: #090514;
@@ -38,6 +41,9 @@
     --nebula-1: rgba(0, 229, 255, 0.3);
     --nebula-2: rgba(213, 0, 249, 0.22);
     --nebula-3: rgba(0, 229, 255, 0.1);
+    --bg-card-glass: rgba(17, 9, 36, 0.5);
+    --bg-card-glass-strong: rgba(17, 9, 36, 0.68);
+    --border-glass: rgba(0, 229, 255, 0.3);
 }
 
 body {

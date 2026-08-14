@@ -7,15 +7,21 @@
 .spa-page { display: none; }
 .spa-page.active { display: block; }
 
-/* --- PREMIUM CARD DESIGN --- */
+/* --- PREMIUM CARD DESIGN (glassmorphism, background starfield keliatan tembus) --- */
 .premium-card {
-    background: var(--bg-card);
-    border: 1px solid var(--accent-alpha);
+    background: var(--bg-card-glass);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid var(--border-glass);
     border-radius: 8px;
     padding: 18px;
     margin-bottom: 15px;
     position: relative;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+}
+/* Fallback buat WebView/browser lama yang gak support backdrop-filter */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .premium-card { background: var(--bg-card-glass-strong); }
 }
 .card-header-title {
     font-size: 13px;
@@ -85,7 +91,15 @@
 
 /* --- REKAP STATS --- */
 .stats-premium-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-.stat-mini-box { background: var(--bg-card); padding: 12px; border-radius: 6px; text-align: center; border: 1px solid var(--accent-alpha-low); }
+.stat-mini-box {
+    background: var(--bg-card-glass);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
+    padding: 12px; border-radius: 6px; text-align: center; border: 1px solid var(--accent-alpha-low);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .stat-mini-box { background: var(--bg-card-glass-strong); }
+}
 .stat-mini-box .lbl { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
 .stat-mini-box .val { font-size: 13px; font-weight: bold; }
 .stat-mini-box.main-profit { background: var(--text-gold); }
@@ -97,7 +111,15 @@
 .close-modal { position: absolute; top: 15px; right: 15px; font-size: 20px; color: var(--text-muted); cursor: pointer; }
 
 /* --- ESTIMASI NOTA INVOICE PRESET --- */
-.invoice-card-box { background: var(--bg-card); border: 1.5px dashed var(--text-gold); border-radius: 12px; padding: 25px; box-sizing: border-box; }
+.invoice-card-box {
+    background: var(--bg-card-glass-strong);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    border: 1.5px dashed var(--text-gold); border-radius: 12px; padding: 25px; box-sizing: border-box;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .invoice-card-box { background: var(--bg-card); }
+}
 .invoice-header-title { font-size: 20px; font-weight: bold; text-align: center; color: var(--text-gold); letter-spacing: 1px; }
 .invoice-header-sub { font-size: 11px; text-align: center; color: var(--text-muted); margin-top: 3px; }
 .invoice-divider { border-top: 1px dashed var(--accent-alpha); margin: 15px 0; }
@@ -123,7 +145,17 @@
 
 .warning-text { color:#e67e22; font-size:11px; display:block; margin-top:4px;}
 .hint-text { color: var(--text-gold); font-size:11px; display:block; margin-top:2px;}
-.agenda-item { display:flex; justify-content:space-between; align-items:center; background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; font-size:12px;}
+.agenda-item {
+    display:flex; justify-content:space-between; align-items:center;
+    background: rgba(0,0,0,0.22);
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    backdrop-filter: blur(8px) saturate(130%);
+    padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; font-size:12px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .agenda-item { background: rgba(6,8,18,0.6); }
+}
 .select-clean { background:transparent; border:1px solid var(--accent-alpha); color:white; font-size:11px; padding:4px; border-radius:4px;}
 .ledger-row { display: flex; justify-content: space-between; font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
