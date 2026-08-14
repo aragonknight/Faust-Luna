@@ -117,13 +117,17 @@ function showLunaPopup() {
     const text = document.getElementById('luna-popup-text');
     if (!popup || !img || !text) return;
 
+    // Kalau lagi kebuka, tombol berfungsi sebagai toggle (klik lagi = tutup)
+    if (!popup.classList.contains('hidden')) {
+        popup.classList.add('hidden');
+        return;
+    }
+
     const tip = LUNA_TIPS[Math.floor(Math.random() * LUNA_TIPS.length)];
     img.src = `assets/maskot/${tip.img}`;
     text.textContent = tip.text;
+    renderNotifDropdown(); // isi juga daftar notifikasi di panel yang sama
     popup.classList.remove('hidden');
-
-    clearTimeout(window._lunaPopupTimeout);
-    window._lunaPopupTimeout = setTimeout(() => popup.classList.add('hidden'), 5000);
 }
 
 // --- PENGINGAT OTOMATIS: NOTIFIKASI BROWSER (H-1), FALLBACK BUAT MODE PWA/BROWSER --- //
