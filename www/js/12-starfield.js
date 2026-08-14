@@ -9,7 +9,7 @@
         var container = document.getElementById('starfield-container');
         if (!container) return;
 
-        var starCount = reduceMotion ? 0 : (window.innerWidth < 480 ? 55 : 90);
+        var starCount = reduceMotion ? 0 : (window.innerWidth < 480 ? 25 : 35);
         var frag = document.createDocumentFragment();
 
         for (var i = 0; i < starCount; i++) {
