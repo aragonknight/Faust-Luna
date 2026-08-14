@@ -24,13 +24,49 @@ function setupEventListeners() {
     homeMenuToggle?.addEventListener('click', () => { homeSidebar?.classList.toggle('open'); homeOverlay?.classList.toggle('show'); });
     homeOverlay?.addEventListener('click', () => { homeSidebar?.classList.remove('open'); homeOverlay?.classList.remove('show'); });
 
+    // Status: apakah lagi dalam mode layar penuh. Dipisah dari
+    // document.fullscreenElement karena di APK (Capacitor WebView), Web
+    // Fullscreen API gak kepakai -- yang beneran ngilangin status bar
+    // adalah plugin native @capacitor/status-bar.
+    let isFullscreenActive = false;
+    const CapStatusBar = window.Capacitor?.Plugins?.StatusBar;
+    const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
     document.querySelectorAll('.btn-fullscreen-toggle').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+        btn.addEventListener('click', async () => {
+            const enteringFullscreen = !isFullscreenActive;
+
+            if (isNativeApp && CapStatusBar) {
+                // Di APK: sembunyikan/tampilkan status bar native + biar
+                // WebView melebar nutupin area itu.
+                try {
+                    if (enteringFullscreen) {
+                        await CapStatusBar.setOverlaysWebView({ overlay: true });
+                        await CapStatusBar.hide();
+                    } else {
+                        await CapStatusBar.show();
+                        await CapStatusBar.setOverlaysWebView({ overlay: false });
+                    }
+                } catch (err) {
+                    console.warn('Toggle StatusBar gagal:', err);
+                }
+            } else {
+                // Di browser/PWA biasa: tetap pakai Web Fullscreen API.
+                try {
+                    if (enteringFullscreen) {
+                        await document.documentElement.requestFullscreen();
+                    } else if (document.fullscreenElement) {
+                        await document.exitFullscreen();
+                    }
+                } catch (err) {
+                    console.warn('Toggle Fullscreen API gagal:', err);
+                }
+            }
+
+            isFullscreenActive = enteringFullscreen;
+            if (enteringFullscreen) {
                 showToast("📺 Masuk Mode Layar Penuh", "success");
             } else {
-                document.exitFullscreen();
                 showToast("💻 Keluar Mode Layar Penuh");
             }
         });
