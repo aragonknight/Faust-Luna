@@ -106,6 +106,7 @@ function switchToProduct(product) {
     const isMobileLeg = product === 'mobileleg';
     document.getElementById('menu-item-stok')?.classList.toggle('hidden', !isMobileLeg);
     document.getElementById('menu-item-klaim-wdp')?.classList.toggle('hidden', !isMobileLeg);
+    document.getElementById('menu-item-pertemanan')?.classList.toggle('hidden', !isMobileLeg);
     document.getElementById('ml-only-stock-summary')?.classList.toggle('hidden', !isMobileLeg);
     document.getElementById('smart-account-alert')?.classList.toggle('hidden', !isMobileLeg);
     renderServerField(product);

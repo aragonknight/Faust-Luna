@@ -367,6 +367,9 @@ function handleAddGachaLog(e) {
     acc[mapping.avgCostField] = newAvgCost;
     // DM langsung dipotong sekarang (saat gacha beneran kejadian), bukan nanti pas dijual.
     acc.diamond = (acc.diamond || 0) - dmUsed;
+    // Poin Gift ikut nambah 1:1 sesuai DM yang beneran abis buat gacha ini —
+    // sama kayak aturan Poin Gift di Stok Biasa (lihat autoAdjustDmFromStock di 04-dashboard-transaksi.js).
+    acc.giftPoin = (acc.giftPoin || 0) + dmUsed;
 
     state.gachaLogs.unshift({
         id: "gacha_" + Date.now(), accountId, accountName: acc.ign || acc.username,
@@ -660,11 +663,13 @@ function toggleDeliveryStatus(id) {
         // Jalur Gacha: yang ditahan cuma stok itemnya, DM-nya udah kepotong dari awal
         // (sejak dicatat lewat "Catat Gacha"), jadi diamond gak disentuh di sini.
         else if (gachaInfo) { if ((acc[gachaInfo.stockField] || 0) <= 0) return; acc[gachaInfo.stockField]--; }
-        // Slot gift & DM ikut kepotong di sini juga (dulu kelewat, cuma stok starlight
-        // yang kepotong) — samain dengan jalur input transaksi langsung non-Booking.
+        // Slot gift ikut kepotong di sini juga (dulu kelewat, cuma stok starlight yang
+        // kepotong) — samain dengan jalur input transaksi langsung non-Booking. Poin
+        // Gift juga ikut kepotong (DM gak disentuh lagi di sini — udah kepotong duluan
+        // sejak stok ini ditambahin, lihat handleAddSale).
         if (needsAccount) {
             acc.gift_slots = (acc.gift_slots || 0) - 1;
-            if (dmPerUnit) acc.diamond = (acc.diamond || 0) - dmPerUnit;
+            if (dmPerUnit) acc.giftPoin = (acc.giftPoin || 0) - dmPerUnit;
         }
         tx.status = 'Belum Dikirim';
     } else if (tx.status === 'Belum Dikirim') {
@@ -682,10 +687,10 @@ function toggleDeliveryStatus(id) {
         if (tx.starlightType === 'Basic') acc.basic++;
         else if (tx.starlightType === 'Premium') acc.premium++;
         else if (gachaInfo) acc[gachaInfo.stockField] = (acc[gachaInfo.stockField] || 0) + 1;
-        // Balikin lagi slot gift & DM yang tadi dipotong, karena batal lagi ke Booking.
+        // Balikin lagi slot gift & Poin Gift yang tadi dipotong, karena batal lagi ke Booking.
         if (needsAccount) {
             acc.gift_slots = (acc.gift_slots || 0) + 1;
-            if (dmPerUnit) acc.diamond = (acc.diamond || 0) + dmPerUnit;
+            if (dmPerUnit) acc.giftPoin = (acc.giftPoin || 0) + dmPerUnit;
         }
     }
     saveState(); renderAll(); showToast(`✅ Status: ${tx.status}`, "success");
@@ -787,10 +792,32 @@ function renderRekapPage() {
     initPrivacy();
 }
 
+// Balikin stok akun (Starlight Basic/Premium/Gacha, slot gift, & DM) yang tadinya
+// kepotong pas transaksi ini dibuat/dikonfirmasi. Cuma relevan buat transaksi yang
+// punya akun penjual (Basic/Premium/Gacha) DAN statusnya bukan "Booking" — soalnya
+// status "Booking" emang belum motong stok apa-apa dari awal (lihat handleAddSale
+// & toggleDeliveryStatus di 04-dashboard-transaksi.js).
+function restoreAccountStockFromTx(item) {
+    const needsAccount = usesSellerAccount(item.starlightType);
+    if (!needsAccount || item.status === 'Booking') return;
+    const acc = state.accounts.find(a => a.id === item.accountId);
+    if (!acc) return;
+    const gachaInfo = GACHA_TYPE_MAP[item.starlightType];
+    const dmPerUnit = DM_PER_TYPE[item.starlightType];
+    if (item.starlightType === 'Basic') acc.basic = (acc.basic || 0) + 1;
+    else if (item.starlightType === 'Premium') acc.premium = (acc.premium || 0) + 1;
+    else if (gachaInfo) acc[gachaInfo.stockField] = (acc[gachaInfo.stockField] || 0) + 1;
+    acc.gift_slots = (acc.gift_slots || 0) + 1;
+    if (dmPerUnit) acc.giftPoin = (acc.giftPoin || 0) + dmPerUnit;
+}
+
 function moveTxToTrash(id) {
     showConfirm("Pindahkan transaksi ini ke kotak sampah?", () => {
         const idx = state.transactions.findIndex(t => t.id === id);
         const item = state.transactions.splice(idx, 1)[0];
+
+        // Balikin stok akun yang kepotong (kalau ada) — lihat restoreAccountStockFromTx.
+        restoreAccountStockFromTx(item);
 
         // Kalau statusnya udah "Sudah Dikirim" pas dihapus, duitnya kan udah
         // beneran cair — arsipin omset/modal/profit-nya PERMANEN ke
@@ -828,10 +855,28 @@ function renderTrashBin() {
     });
 }
 
+function deductAccountStockFromTx(item) {
+    const needsAccount = usesSellerAccount(item.starlightType);
+    if (!needsAccount || item.status === 'Booking') return;
+    const acc = state.accounts.find(a => a.id === item.accountId);
+    if (!acc) return;
+    const gachaInfo = GACHA_TYPE_MAP[item.starlightType];
+    const dmPerUnit = DM_PER_TYPE[item.starlightType];
+    if (item.starlightType === 'Basic') acc.basic = (acc.basic || 0) - 1;
+    else if (item.starlightType === 'Premium') acc.premium = (acc.premium || 0) - 1;
+    else if (gachaInfo) acc[gachaInfo.stockField] = (acc[gachaInfo.stockField] || 0) - 1;
+    acc.gift_slots = (acc.gift_slots || 0) - 1;
+    if (dmPerUnit) acc.giftPoin = (acc.giftPoin || 0) - dmPerUnit;
+}
+
 function restoreTrash(id) {
     const idx = state.trash.findIndex(t => t.id === id);
     const restored = state.trash.splice(idx, 1)[0].rawData;
     state.transactions.push(restored);
+    // Kalau data ini "Transaksi" yang tadi ngebalikin stok pas dibuang (lihat
+    // moveTxToTrash -> restoreAccountStockFromTx), potong lagi stoknya di sini
+    // biar akun konsisten sama waktu transaksi ini masih aktif.
+    deductAccountStockFromTx(restored);
     // Kalau transaksi ini sebelumnya sempat diarsipkan (lihat moveTxToTrash),
     // hapus dulu entri arsipnya — sekarang udah aktif lagi di transactions,
     // jadi bakal kehitung dari situ. Kalau gak dihapus, nanti dobel kehitung.

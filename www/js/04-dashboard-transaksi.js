@@ -141,6 +141,7 @@ function setupEventListeners() {
             scope.querySelector(`#page-${target}`)?.classList.add('active');
             if (target === 'home-keuangan') renderHomeKeuangan();
             if (target === 'pengeluaran') renderPengeluaran();
+            if (target === 'pertemanan') renderPertemananPage();
             document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
             document.querySelectorAll('.sidebar-overlay').forEach(o => o.classList.remove('show'));
         });
@@ -151,11 +152,14 @@ function setupEventListeners() {
     document.getElementById('form-penjualan')?.addEventListener('submit', handleAddSale);
     document.getElementById('payment-status')?.addEventListener('change', togglePaymentStatusFields);
     document.getElementById('form-account')?.addEventListener('submit', handleSaveAccount);
+    document.getElementById('acc-basic')?.addEventListener('input', autoAdjustDmFromStock);
+    document.getElementById('acc-premium')?.addEventListener('input', autoAdjustDmFromStock);
     document.getElementById('search-buyer')?.addEventListener('input', renderPembeliGrid);
     document.getElementById('hide-delivered-check')?.addEventListener('change', renderPembeliGrid);
     document.getElementById('hide-acc-check')?.addEventListener('change', renderPembeliGrid);
     document.getElementById('only-debt-check')?.addEventListener('change', renderPembeliGrid);
     document.getElementById('rekap-month-filter')?.addEventListener('change', renderRekapPage);
+    document.getElementById('pertemanan-sort-select')?.addEventListener('change', renderPertemananPage);
     document.getElementById('close-invoice')?.addEventListener('click', () => document.getElementById('invoice-modal')?.classList.remove('open'));
     document.getElementById('btn-close-invoice-card')?.addEventListener('click', () => document.getElementById('invoice-modal')?.classList.remove('open'));
     document.getElementById('close-account-modal')?.addEventListener('click', () => document.getElementById('account-modal')?.classList.remove('open'));
@@ -334,12 +338,12 @@ function handleAddSale(e) {
             if (starlightType === 'Premium' && (acc.premium || 0) < qty) { showToast(`❌ Stok Premium tidak cukup!`, "error"); return; }
             if (gachaInfo && (acc[gachaInfo.stockField] || 0) < qty) { showToast(`❌ Stok ${starlightType} tidak cukup!`, "error"); return; }
             if ((acc.gift_slots || 0) < qty) { showToast(`❌ Slot gift tidak cukup!`, "error"); return; }
-            // Stok DM cuma dicek buat jalur Biasa (dmPerUnit) — jalur Gacha DM-nya udah
-            // dipotong sejak dicatat lewat "Catat Gacha", jadi gak dicek ulang di sini.
-            // Kalau kurang, TETAP DIIZINKAN lanjut (misal lagi ngasih dulu ke pembeli
-            // langganan sambil nunggu restock WDP) — cuma dikasih warning, sisa DM
-            // akun ini bakal jadi minus setelah transaksi ini tersimpan.
-            if (dmPerUnit && (acc.diamond || 0) < dmPerUnit * qty) { showToast(`⚠️ Sisa DM akun ini gak cukup, bakal jadi minus setelah transaksi ini disimpan.`, "error"); }
+            // Poin Gift cuma dicek buat jalur Biasa (dmPerUnit) — jalur Gacha DM/Poin-nya
+            // udah dipotong/ditambah sejak dicatat lewat "Catat Gacha", jadi gak dicek ulang
+            // di sini. Kalau kurang, TETAP DIIZINKAN lanjut (misal lagi ngasih dulu ke pembeli
+            // langganan) — cuma dikasih warning, sisa Poin Gift akun ini bakal jadi minus
+            // setelah transaksi ini tersimpan.
+            if (dmPerUnit && (acc.giftPoin || 0) < dmPerUnit * qty) { showToast(`⚠️ Sisa Poin Gift akun ini gak cukup, bakal jadi minus setelah transaksi ini disimpan.`, "error"); }
         }
         // Modal Starlight Basic/Premium (Biasa) SELALU otomatis dari rata-rata modal/DM
         // akun ini. Modal jalur Gacha otomatis dari rata-rata modal/item hasil gacha akun
@@ -369,9 +373,11 @@ function handleAddSale(e) {
                 else if (starlightType === 'Premium') acc.premium--;
                 else if (gachaInfo) acc[gachaInfo.stockField] = (acc[gachaInfo.stockField] || 0) - 1;
                 acc.gift_slots--;
-                // Diamond cuma dipotong buat jalur Biasa; jalur Gacha diamond-nya udah
-                // dipotong dari awal pas dicatat lewat "Catat Gacha".
-                if (dmPerUnit) acc.diamond = (acc.diamond || 0) - dmPerUnit;
+                // Pas input penjualan (dikirim ke pembeli), yang kepotong CUMA Stok
+                // Starlight & Poin Gift — Diamond (DM) udah kepotong duluan sejak stok
+                // ini ditambahin (lihat autoAdjustDmFromStock/handleAddGachaLog), jadi
+                // gak dipotong lagi di sini.
+                if (dmPerUnit) acc.giftPoin = (acc.giftPoin || 0) - dmPerUnit;
             }
             const isStarlightProduct = starlightType === 'Basic' || starlightType === 'Premium' || !!gachaInfo;
                             let estDeliveryDate = purchaseDate;
@@ -498,6 +504,57 @@ function renderAccountDropdown() {
     updateAutoCapitalPreview();
 }
 
+// Halaman "Pertemanan Akun" (khusus Mobile Legends): buat tiap akun penjual,
+// rekap pembeli mana aja yang statusnya udah dicentang berteman (friendshipChecked)
+// dan mana yang masih ditunggu. Cuma transaksi Starlight (Basic/Premium/Gacha) yang
+// relevan, soalnya cuma jalur itu yang butuh proses tambah teman di game.
+function renderPertemananPage() {
+    const container = document.getElementById('pertemanan-grid'); if(!container) return;
+    container.innerHTML = '';
+    const sortMode = document.getElementById('pertemanan-sort-select')?.value || 'default';
+
+    const rows = state.accounts.map(acc => {
+        const txs = state.transactions.filter(t => t.accountId === acc.id && usesSellerAccount(t.starlightType));
+        const sudahBerteman = txs.filter(t => t.friendshipChecked);
+        const belumBerteman = txs.filter(t => !t.friendshipChecked);
+        return { acc, sudahBerteman, belumBerteman };
+    });
+
+    if (sortMode === 'belum-terbanyak') {
+        rows.sort((a, b) => b.belumBerteman.length - a.belumBerteman.length);
+    } else if (sortMode === 'nama-az') {
+        rows.sort((a, b) => (a.acc.ign || '').localeCompare(b.acc.ign || ''));
+    }
+
+    if (rows.length === 0) { container.innerHTML = maskotEmptyHTML('kosong', 'Belum ada akun penjual.'); return; }
+
+    rows.forEach(({ acc, sudahBerteman, belumBerteman }) => {
+        const card = document.createElement('div'); card.className = 'premium-card';
+        const buildBuyerRow = (t) => `
+            <div class="premium-row">
+                <span class="lbl">${t.buyerName || 'Tanpa Nama'} <span style="opacity:0.6;">(${t.starlightType})</span></span>
+                <span class="val" style="font-size:11px;">${t.buyerId || '-'}</span>
+            </div>`;
+        card.innerHTML = `
+            <div class="card-header-title">🛡️ ${acc.ign || 'Tanpa IGN'}</div>
+            <div class="invoice-divider"></div>
+            <div class="premium-row"><span class="lbl">✅ Sudah Berteman:</span><span class="val green-glow">${sudahBerteman.length}</span></div>
+            <div class="premium-row"><span class="lbl">⏳ Belum Berteman:</span><span class="val" style="${belumBerteman.length > 0 ? 'color:#ffaa00; font-weight:bold;' : ''}">${belumBerteman.length}</span></div>
+            <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
+            ${belumBerteman.length > 0 ? `
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">⏳ Menunggu pertemanan:</div>
+                ${belumBerteman.map(buildBuyerRow).join('')}
+            ` : `<div style="font-size:11px; color:var(--text-muted);">Gak ada yang lagi ditunggu pertemanannya. 🎉</div>`}
+            ${sudahBerteman.length > 0 ? `
+                <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">✅ Sudah berteman:</div>
+                ${sudahBerteman.map(buildBuyerRow).join('')}
+            ` : ''}
+        `;
+        container.appendChild(card);
+    });
+}
+
 function renderAccountGrid() {
     const container = document.getElementById('account-premium-grid'); if(!container) return;
     container.innerHTML = '';
@@ -534,6 +591,7 @@ function renderAccountGrid() {
             </div>
             <div class="invoice-divider" style="margin: 8px 0; border-top: 1px dashed rgba(255,255,255,0.05);"></div>
             <div class="premium-row"><span class="lbl">Batas Gift:</span><span class="val green-glow">${acc.gift_slots || 0} / 3</span></div>
+            <div class="premium-row"><span class="lbl">Poin Gift:</span><span class="val highlight">🎁 ${acc.giftPoin || 0}</span></div>
             <div class="premium-row"><span class="lbl">Diamonds:</span><span class="val" style="${(acc.diamond || 0) < 0 ? 'color:#ff6b6b; font-weight:bold;' : ''}">💎 ${acc.diamond || 0}${(acc.diamond || 0) < 0 ? ' (minus)' : ''}</span></div>
             <div class="premium-row"><span class="lbl">Rata-rata Modal/DM:</span><span class="val" style="color:var(--text-gold);">Rp ${Math.round(acc.avgDmCost || 0).toLocaleString('id-ID')}</span></div>
             <div class="card-action-footer">
@@ -575,9 +633,34 @@ function switchStokTab(accId, tab) {
     }
 }
 
+// Tiap ketikan di Stok Basic/Premium (biasa) di form akun otomatis motong/balikin
+// Sisa Diamond sesuai SELISIH dari nilai awal pas modal dibuka (bukan nilai
+// mutlaknya) — 1 Basic = -300 DM, 1 Premium = -750 DM (lihat DM_PER_TYPE).
+// Poin Gift ikut nambah 1:1 sama jumlah DM yang berkurang (misal DM -300 -> Poin
+// Gift +300). Kalau angkanya dikurangin (misal salah ketik), DM & Poin Gift ikut balik.
+function autoAdjustDmFromStock() {
+    const basicField = document.getElementById('acc-basic');
+    const premiumField = document.getElementById('acc-premium');
+    const dmField = document.getElementById('acc-dm');
+    const giftPoinField = document.getElementById('acc-gift-poin');
+    if (!basicField || !premiumField || !dmField) return;
+    const origBasic = parseInt(basicField.dataset.origVal || 0);
+    const origPremium = parseInt(premiumField.dataset.origVal || 0);
+    const origDm = parseInt(dmField.dataset.origVal || 0);
+    const curBasic = parseInt(basicField.value || 0);
+    const curPremium = parseInt(premiumField.value || 0);
+    const deltaDm = (curBasic - origBasic) * DM_PER_TYPE['Basic'] + (curPremium - origPremium) * DM_PER_TYPE['Premium'];
+    dmField.value = origDm - deltaDm;
+    if (giftPoinField) {
+        const origGiftPoin = parseInt(giftPoinField.dataset.origVal || 0);
+        giftPoinField.value = origGiftPoin + deltaDm;
+    }
+}
+
 function openAccountModal(id = null) {
     const modal = document.getElementById('account-modal');
     document.getElementById('form-account')?.reset();
+    const dmField = document.getElementById('acc-dm');
     if(id) {
         const acc = state.accounts.find(a => a.id === id);
         if(document.getElementById('account-id-edit')) document.getElementById('account-id-edit').value = acc.id || '';
@@ -590,9 +673,22 @@ function openAccountModal(id = null) {
         if(document.getElementById('acc-basic-gacha')) document.getElementById('acc-basic-gacha').value = acc.basicGacha || 0;
         if(document.getElementById('acc-premium-gacha')) document.getElementById('acc-premium-gacha').value = acc.premiumGacha || 0;
         if(document.getElementById('acc-gift')) document.getElementById('acc-gift').value = acc.gift_slots || 0;
-        if(document.getElementById('acc-dm')) document.getElementById('acc-dm').value = acc.diamond || 0;
+        if(document.getElementById('acc-gift-poin')) document.getElementById('acc-gift-poin').value = acc.giftPoin || 0;
+        if(dmField) dmField.value = acc.diamond || 0;
+        // Titik awal buat hitung selisih Stok Basic/Premium yang diketik di form ini
+        // (lihat autoAdjustDmFromStock) — biar DM & Poin Gift ikut ke-auto-sesuaikan
+        // cuma dari SELISIH-nya, bukan dari nilai stok yang udah ada sebelumnya.
+        if(document.getElementById('acc-basic')) document.getElementById('acc-basic').dataset.origVal = acc.basic || 0;
+        if(document.getElementById('acc-premium')) document.getElementById('acc-premium').dataset.origVal = acc.premium || 0;
+        if(dmField) dmField.dataset.origVal = acc.diamond || 0;
+        if(document.getElementById('acc-gift-poin')) document.getElementById('acc-gift-poin').dataset.origVal = acc.giftPoin || 0;
     } else { 
         if(document.getElementById('account-id-edit')) document.getElementById('account-id-edit').value = ''; 
+        // Akun baru: titik awal stok, DM, & poin gift-nya 0.
+        if(document.getElementById('acc-basic')) document.getElementById('acc-basic').dataset.origVal = 0;
+        if(document.getElementById('acc-premium')) document.getElementById('acc-premium').dataset.origVal = 0;
+        if(dmField) dmField.dataset.origVal = 0;
+        if(document.getElementById('acc-gift-poin')) document.getElementById('acc-gift-poin').dataset.origVal = 0;
     }
     if(modal) modal.classList.add('open');
 }
@@ -609,14 +705,15 @@ function handleSaveAccount(e) {
     const basicGacha = parseInt(document.getElementById('acc-basic-gacha')?.value || 0);
     const premiumGacha = parseInt(document.getElementById('acc-premium-gacha')?.value || 0);
     const gift_slots = parseInt(document.getElementById('acc-gift')?.value || 0);
+    const giftPoin = parseInt(document.getElementById('acc-gift-poin')?.value || 0);
     const diamond = parseInt(document.getElementById('acc-dm')?.value || 0);
     
     if(id) {
         const acc = state.accounts.find(a => a.id === id);
-        Object.assign(acc, { ign, username, password, login_method, basic, premium, gift_slots, diamond, basicGacha, premiumGacha });
+        Object.assign(acc, { ign, username, password, login_method, basic, premium, gift_slots, giftPoin, diamond, basicGacha, premiumGacha });
         if (typeof logActivity === 'function') logActivity('akun', `Info akun "${ign || username}" diubah`);
     } else {
-        state.accounts.push({ id: "acc_"+Date.now(), ign, username, password, login_method, basic, premium, gift_slots, diamond, basicGacha, premiumGacha, avgDmCost: 0, avgGachaCostBasic: 0, avgGachaCostPremium: 0 });
+        state.accounts.push({ id: "acc_"+Date.now(), ign, username, password, login_method, basic, premium, gift_slots, giftPoin, diamond, basicGacha, premiumGacha, avgDmCost: 0, avgGachaCostBasic: 0, avgGachaCostPremium: 0 });
         if (typeof logActivity === 'function') logActivity('akun', `Akun kasir baru ditambahkan: "${ign || username}"`);
     }
     saveState(); document.getElementById('account-modal')?.classList.remove('open'); renderAll(); showToast("✅ Akun kasir disimpan!", "success");
