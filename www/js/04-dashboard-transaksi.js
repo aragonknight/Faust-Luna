@@ -118,9 +118,6 @@ function setupEventListeners() {
     });
     
     document.getElementById('form-ledger')?.addEventListener('submit', handleAddLedger);
-    document.getElementById('btn-clear-logs')?.addEventListener('click', () => {
-        state.logs = []; saveState(); renderLogs(); showToast("Log dibersihkan");
-    });
     
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
@@ -194,7 +191,6 @@ function setupEventListeners() {
     // Pengaturan: WhatsApp, Notifikasi H-1, Supabase
     document.getElementById('set-wa-hmin')?.addEventListener('change', handleChangeHmin);
     document.getElementById('set-h1-notif-enabled')?.addEventListener('change', handleToggleH1Notif);
-    document.getElementById('form-settings-supabase')?.addEventListener('submit', handleSaveSupabaseSettings);
     document.getElementById('btn-supabase-push')?.addEventListener('click', pushStateToSupabase);
     document.getElementById('btn-supabase-pull')?.addEventListener('click', pullStateFromSupabase);
     document.getElementById('btn-test-notif')?.addEventListener('click', handleTestNotif);

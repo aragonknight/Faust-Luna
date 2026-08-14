@@ -197,9 +197,12 @@
             if (diff > 70) {
                 indicator.textContent = '🔄 Memuat ulang...';
                 window.flHaptic('medium');
-                setTimeout(() => {
-                    if (typeof loadDataFromSupabase === 'function') {
-                        loadDataFromSupabase();
+                setTimeout(async () => {
+                    if (typeof pullStateForCurrentUser === 'function' && typeof renderAll === 'function') {
+                        await pullStateForCurrentUser();
+                        renderAll();
+                        if (typeof renderHomeKeuangan === 'function') renderHomeKeuangan();
+                        if (typeof showToast === 'function') showToast('🔄 Data disegarkan', 'success');
                     } else {
                         location.reload();
                     }

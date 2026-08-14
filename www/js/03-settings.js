@@ -6,8 +6,6 @@
 function renderSettingsForm() {
     if(document.getElementById('set-wa-hmin')) document.getElementById('set-wa-hmin').value = state.settings.waHmin || 2;
     if(document.getElementById('set-h1-notif-enabled')) document.getElementById('set-h1-notif-enabled').checked = !!state.settings.h1NotifEnabled;
-    if(document.getElementById('set-supabase-url')) document.getElementById('set-supabase-url').value = state.settings.supabaseUrl || '';
-    if(document.getElementById('set-supabase-key')) document.getElementById('set-supabase-key').value = state.settings.supabaseKey || '';
     renderNotifLastScheduled();
     refreshBatteryOptimWarning();
 }
@@ -129,25 +127,21 @@ function handleToggleH1Notif(e) {
     showToast(enabled ? '🔔 Pengingat H-1 di HP diaktifkan!' : 'Pengingat H-1 di HP dimatikan', 'success');
 }
 
-function handleSaveSupabaseSettings(e) {
-    e.preventDefault();
-    state.settings.supabaseUrl = document.getElementById('set-supabase-url')?.value.trim() || '';
-    state.settings.supabaseKey = document.getElementById('set-supabase-key')?.value.trim() || '';
-    supabaseClient = null; // reset supaya dibuat ulang dengan config baru
-    saveState();
-    showToast('☁️ Pengaturan Supabase disimpan!', 'success');
-}
-
+// Backup/restore manual sekarang pakai client Supabase yang sama dengan
+// login (getAuthClient() di 10-auth-sync.js), bukan URL/Key manual lagi --
+// form pengaturan URL/Key manual sudah diganti sistem login akun.
 function getSupabaseClient() {
-    if (!state.settings.supabaseUrl || !state.settings.supabaseKey) return null;
-    if (!window.supabase || !window.supabase.createClient) {
+    if (typeof currentAuthUser === 'undefined' || !currentAuthUser) {
+        showToast('❌ Kamu harus login dulu buat backup/tarik data manual.', 'error');
+        return null;
+    }
+    if (typeof getAuthClient !== 'function') return null;
+    const client = getAuthClient();
+    if (!client) {
         showToast('❌ Library Supabase gagal dimuat (cek koneksi internet).', 'error');
         return null;
     }
-    if (!supabaseClient) {
-        supabaseClient = window.supabase.createClient(state.settings.supabaseUrl, state.settings.supabaseKey);
-    }
-    return supabaseClient;
+    return client;
 }
 
 async function pushStateToSupabase() {
