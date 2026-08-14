@@ -39,6 +39,9 @@ jobs:
 
       - name: Tambah izin exact alarm, notifikasi, & battery optimization ke Manifest
         run: python3 scripts/patch_manifest.py
+        
+      - name: Patch edge-to-edge enforcement
+        run: python scripts/patch_edge_to_edge.py
 
       - name: Pasang plugin native BatteryOptimization
         run: python3 scripts/patch_native_plugin.py
