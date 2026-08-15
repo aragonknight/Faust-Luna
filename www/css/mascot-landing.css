@@ -22,16 +22,11 @@
     border: 2px solid var(--text-gold);
     box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 10px var(--accent-alpha);
     background: var(--bg-card);
-    transition: transform 0.25s ease;
-    animation: maskotBob 2.6s ease-in-out infinite;
+    transition: transform 0.15s ease;
     pointer-events: auto; /* cuma bulatan avatar ini yang bisa di-tap */
     cursor: pointer;
 }
 .maskot-widget:hover .maskot-widget-avatar { transform: scale(1.08); }
-@keyframes maskotBob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
 .maskot-widget-stack { display: flex; flex-direction: column; align-items: flex-end; }
 .maskot-bubble {
     max-width: 190px;
@@ -156,7 +151,6 @@
     border: 4px solid var(--text-gold);
     box-shadow: 0 10px 34px rgba(0,0,0,0.5);
     margin-bottom: 12px;
-    animation: maskotBob 3s ease-in-out infinite;
 }
 .landing-btn {
     width: auto;

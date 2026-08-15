@@ -133,10 +133,9 @@
 .confirm-actions { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
 
 .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-.custom-toast { background: #111827; border-left: 4px solid #3b82f6; color: white; padding: 12px 20px; border-radius: 4px; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); animation: toastIn 0.3s forwards; min-width: 200px; }
+.custom-toast { background: #111827; border-left: 4px solid #3b82f6; color: white; padding: 12px 20px; border-radius: 4px; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); min-width: 200px; }
 .toast-success { border-left-color: var(--success-green); }
 .toast-error { border-left-color: var(--danger-red); }
-@keyframes toastIn { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
 
 .warning-text { color:#e67e22; font-size:11px; display:block; margin-top:4px;}
 .hint-text { color: var(--text-gold); font-size:11px; display:block; margin-top:2px;}
@@ -200,16 +199,7 @@
 .fl-skeleton-bar {
     height: 14px;
     border-radius: 6px;
-    background: linear-gradient(90deg,
-        rgba(212, 175, 55, 0.08) 25%,
-        rgba(212, 175, 55, 0.18) 37%,
-        rgba(212, 175, 55, 0.08) 63%);
-    background-size: 400% 100%;
-    animation: fl-skeleton-shimmer 1.4s ease infinite;
-}
-@keyframes fl-skeleton-shimmer {
-    0% { background-position: 100% 50%; }
-    100% { background-position: 0 50%; }
+    background: rgba(212, 175, 55, 0.12);
 }
 
 /* ============================================================
@@ -233,14 +223,10 @@
     border-color: var(--text-gold);
     background: var(--accent-alpha);
     color: var(--text-gold);
-    animation: wdp-pulse 1.4s ease infinite;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
 }
 .wdp-day-claimed {
     border-color: var(--success-green);
     background: rgba(46, 204, 113, 0.15);
     color: var(--success-green);
-}
-@keyframes wdp-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
-    50% { box-shadow: 0 0 0 5px rgba(212, 175, 55, 0); }
 }
