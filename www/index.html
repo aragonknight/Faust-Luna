@@ -455,9 +455,16 @@
                 <form id="form-penjualan">
                     <div class="form-group">
                         <label>Nama Pembeli / Kontak Sosial Media</label>
-                        <input type="text" id="buyer-name" placeholder="Contoh: No WA / IGN / Nama FB Pembeli" list="crm-buyer-list" required>
-                        <datalist id="crm-buyer-list"></datalist>
+                        <input type="text" id="buyer-name" placeholder="Contoh: No WA / IGN / Nama FB Pembeli" required>
                         <span id="duplicate-warning" class="warning-text hidden">⚠️ Nama ini sudah ada dalam antrean!</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Order Via</label>
+                        <select id="order-channel">
+                            <option value="WA">💬 WhatsApp</option>
+                            <option value="FB">📘 Facebook</option>
+                        </select>
                     </div>
                     
                     <div class="form-group">
@@ -745,6 +752,7 @@
             </div>
             <div class="invoice-divider"></div>
             <div class="invoice-row"><span class="label">Nama Pembeli:</span><span class="value" id="inv-buyer-name">-</span></div>
+            <div class="invoice-row"><span class="label">Order Via:</span><span class="value" id="inv-order-channel">-</span></div>
             <div class="invoice-row"><span class="label">Target Akun:</span><span class="value" id="inv-buyer-id">-</span></div>
             <div class="invoice-row"><span class="label">Produk Item:</span><span class="value badge-sl" id="inv-item-type">-</span></div>
             <div class="invoice-row"><span class="label">Tanggal Beli:</span><span class="value" id="inv-purchase-date">-</span></div>
@@ -854,6 +862,13 @@
             <form id="form-edit-tx">
                 <input type="hidden" id="edit-tx-id">
                 <div class="form-group"><label>Nama Pembeli</label><input type="text" id="edit-tx-buyer-name" required></div>
+                <div class="form-group">
+                    <label>Order Via</label>
+                    <select id="edit-tx-order-channel">
+                        <option value="WA">💬 WhatsApp</option>
+                        <option value="FB">📘 Facebook</option>
+                    </select>
+                </div>
                 <div class="form-group"><label>Target ID Game</label><input type="text" id="edit-tx-buyer-id"></div>
                 <div class="form-group"><label>Variasi Produk</label><select id="edit-tx-type"></select></div>
                 <div class="form-row">

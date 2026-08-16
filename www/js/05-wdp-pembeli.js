@@ -456,7 +456,7 @@ function renderPembeliGrid() {
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="card-header-title">${t.buyerName || 'Tanpa Nama'} <span style="font-size:10px; color:var(--text-gold);">${countdownText}</span></div>
+                <div class="card-header-title">${t.orderChannel === 'FB' ? '📘' : '💬'} ${t.buyerName || 'Tanpa Nama'} <span style="font-size:10px; color:var(--text-gold);">${countdownText}</span></div>
                 <span class="pill-badge ${badgeType}" style="cursor:pointer;" onclick="toggleDeliveryStatus('${t.id}')">${t.status || '-'}</span>
             </div>
             <div class="invoice-divider"></div>
@@ -502,6 +502,7 @@ function openEditTxModal(id) {
 
     document.getElementById('edit-tx-id').value = tx.id;
     document.getElementById('edit-tx-buyer-name').value = tx.buyerName || '';
+    document.getElementById('edit-tx-order-channel').value = tx.orderChannel || 'WA';
     document.getElementById('edit-tx-buyer-id').value = tx.buyerId || '';
 
     const typeSelect = document.getElementById('edit-tx-type');
@@ -529,6 +530,7 @@ function handleEditTxSubmit(e) {
     if (!tx) return;
 
     tx.buyerName = document.getElementById('edit-tx-buyer-name')?.value || tx.buyerName;
+    tx.orderChannel = document.getElementById('edit-tx-order-channel')?.value || tx.orderChannel;
     tx.buyerId = document.getElementById('edit-tx-buyer-id')?.value || tx.buyerId;
     tx.starlightType = document.getElementById('edit-tx-type')?.value || tx.starlightType;
     tx.priceCapital = parseFloat(document.getElementById('edit-tx-price-capital')?.value) || 0;
@@ -894,6 +896,7 @@ function generateInvoiceModal(id) {
     const isStarlightProduct = (tx.starlightType || '') === 'Basic' || (tx.starlightType || '') === 'Premium';
     
     if(document.getElementById('inv-buyer-name')) document.getElementById('inv-buyer-name').textContent = tx.buyerName || 'Tanpa Nama';
+    if(document.getElementById('inv-order-channel')) document.getElementById('inv-order-channel').textContent = tx.orderChannel === 'FB' ? '📘 Facebook' : '💬 WhatsApp';
     if(document.getElementById('inv-buyer-id')) document.getElementById('inv-buyer-id').textContent = tx.buyerId || '-';
     if(document.getElementById('inv-item-type')) document.getElementById('inv-item-type').textContent = itemText;
     if(document.getElementById('inv-purchase-date')) document.getElementById('inv-purchase-date').textContent = tx.purchaseDate || '-';
@@ -928,6 +931,7 @@ function generateInvoiceModal(id) {
     const startX = 40; const endX = canvas.width - 40; let currentY = 155;
     const rows = [
         { label: 'Nama Pembeli:', value: tx.buyerName || '-', color: '#ffffff', isBadge: false },
+        { label: 'Order Via:', value: tx.orderChannel === 'FB' ? 'Facebook' : 'WhatsApp', color: '#ffffff', isBadge: false },
         { label: 'Target Akun:', value: tx.buyerId || '-', color: '#ffffff', isBadge: false },
         { label: 'Produk Item:', value: itemText, color: '#091124', isBadge: true },
         { label: 'Tanggal Beli:', value: tx.purchaseDate || '-', color: '#ffffff', isBadge: false }

@@ -135,6 +135,13 @@ function setupEventListeners() {
             const cleanPrice = priceMatch[1].replace(/\./g, '');
             document.getElementById('price-selling').value = cleanPrice;
         }
+
+        const channelSelect = document.getElementById('order-channel');
+        if (channelSelect) {
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('facebook') || lowerText.includes(' fb') || lowerText.startsWith('fb')) channelSelect.value = 'FB';
+            else if (lowerText.includes('whatsapp') || lowerText.includes(' wa') || lowerText.startsWith('wa')) channelSelect.value = 'WA';
+        }
         
         document.getElementById('buyer-id')?.dispatchEvent(new Event('input'));
         updateSalesFormForType();
@@ -157,6 +164,7 @@ function setupEventListeners() {
         if(found && document.getElementById('buyer-id')) {
             document.getElementById('buyer-id').value = found.buyerId || '';
             document.getElementById('buyer-id').dispatchEvent(new Event('input'));
+            if (found.orderChannel && document.getElementById('order-channel')) document.getElementById('order-channel').value = found.orderChannel;
             showToast(`🔄 Pelanggan lama terdeteksi! Auto-fill ID Berhasil.`);
         }
     });
@@ -354,6 +362,7 @@ function togglePaymentStatusFields() {
 function handleAddSale(e) {
     e.preventDefault();
     const buyerName = document.getElementById('buyer-name')?.value || 'Tanpa Nama';
+    const orderChannel = document.getElementById('order-channel')?.value || 'WA';
     const starlightType = document.getElementById('starlight-type')?.value || 'Basic';
     const needsAccount = usesSellerAccount(starlightType);
     const isManualQty = !!MANUAL_QTY_TYPES[starlightType];
@@ -439,7 +448,7 @@ function handleAddSale(e) {
 
                 
             state.transactions.push({
-                id: "tx_" + (Date.now() + idx + "_" + q), buyerName, buyerId: finalIdText, accountId, accountName: needsAccount ? (acc.ign || acc.username) : '-',
+                id: "tx_" + (Date.now() + idx + "_" + q), buyerName, orderChannel, buyerId: finalIdText, accountId, accountName: needsAccount ? (acc.ign || acc.username) : '-',
                 starlightType, priceCapital, priceSelling: finalSellingPerItem, priceDiscount: finalDiscountPerItem,
                 diamondQty: isManualQty ? qty : undefined,
                 netProfit: (finalSellingPerItem - finalDiscountPerItem) - priceCapital,
